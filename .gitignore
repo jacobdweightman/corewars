@@ -1,3 +1,7 @@
+# project files
+build/*
+tmp/*
+
 # Prerequisites
 *.d
 
