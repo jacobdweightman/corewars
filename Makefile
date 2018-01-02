@@ -9,17 +9,25 @@ OUTPUT=build
 
 all: assembler
 
-assembler: $(TMP)/lex.yy.c $(TMP)/redcode.h $(SOURCE)/assembler.c
+assembler: $(TMP)/y.tab.c $(TMP)/lex.yy.c $(TMP)/redcode.h $(TMP)/program.h
 	@mkdir -p build
-	$(COMPILER) $(SOURCE)/assembler.c $(TMP)/lex.yy.c -o $(OUTPUT)/assembler
+	$(COMPILER) $(TMP)/lex.yy.c $(TMP)/y.tab.c -o $(OUTPUT)/assembler
 
-$(TMP)/lex.yy.c: $(SOURCE)/redcode.l
+$(TMP)/y.tab.c: $(SOURCE)/redcode.y
+	@mkdir -p $(TMP)
+	yacc -d $(SOURCE)/redcode.y -o $(TMP)/y.tab.c
+
+$(TMP)/lex.yy.c: $(SOURCE)/redcode.l $(SOURCE)/redcode.h
 	@mkdir -p $(TMP)
 	lex -o $(TMP)/lex.yy.c $(SOURCE)/redcode.l
 
 $(TMP)/redcode.h: $(SOURCE)/redcode.h
 	@mkdir -p $(TMP)
 	cp $(SOURCE)/redcode.h $(TMP)
+
+$(TMP)/program.h: $(SOURCE)/program.h
+	@mkdir -p $(TMP)
+	cp $(SOURCE)/program.h $(TMP)
 
 clean:
 	rm -r $(OUTPUT)
