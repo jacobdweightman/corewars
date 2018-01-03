@@ -18,14 +18,10 @@
  * Author: Jacob Weightman <jacobdweightman@gmail.com>
  */
 
-#ifndef COREWARS
-#define COREWARS
+#ifndef COREWARS_1984_PROGRAM_H_
+#define COREWARS_1984_PROGRAM_H_
 
 #include <stdint.h>
-
-#define CORE_SIZE 4096
-#define MAX_PROGRAM_SIZE 256
-#define MEMORY_BLOCKS CORE_SIZE / MAX_PROGRAM_SIZE
 
 #define INSTRUCTION_TYPE_WIDTH 4
 #define ADDRESSING_MODE_WIDTH 2
@@ -34,6 +30,17 @@
 #define IMMEDIATE_MODE 0b00
 #define RELATIVE_MODE 0b01
 #define INDIRECT_MODE 0b10
+
+#define DAT_TYPE 0
+#define MOV_TYPE 1
+#define ADD_TYPE 2
+#define SUB_TYPE 3
+#define JMP_TYPE 4
+#define JMZ_TYPE 5
+#define DJZ_TYPE 6
+#define CMP_TYPE 7
+
+#define MAX_PROGRAM_SIZE 256
 
 typedef struct instruction {
     unsigned int type: INSTRUCTION_TYPE_WIDTH;
