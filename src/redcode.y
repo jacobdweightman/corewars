@@ -124,6 +124,8 @@ inline opcode generate_opcode(unsigned int type, operand* A, operand* B) {
         result |= (A->mode << (2*OPERAND_WIDTH + ADDRESSING_MODE_WIDTH));
     }
 
+    result |= (type << (2*OPERAND_WIDTH + 2*ADDRESSING_MODE_WIDTH));
+
     return result;
 }
 

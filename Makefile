@@ -5,13 +5,17 @@ SOURCE=src
 TMP=tmp
 OUTPUT=build
 
-.PHONY: all assembler clean
+.PHONY: all assembler mars clean
 
 all: assembler
 
 assembler: $(TMP)/y.tab.c $(TMP)/lex.yy.c $(TMP)/program.h
 	@mkdir -p build
 	$(COMPILER) $(TMP)/lex.yy.c $(TMP)/y.tab.c -o $(OUTPUT)/assembler
+
+mars: $(SOURCE)/mars.c $(SOURCE)/mars.h $(SOURCE)/program.h
+	@mkdir -p build
+	$(COMPILER) $(SOURCE)/mars.c -o $(OUTPUT)/mars
 
 $(TMP)/y.tab.c: $(SOURCE)/redcode.y
 	@mkdir -p $(TMP)
