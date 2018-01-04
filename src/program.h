@@ -48,11 +48,14 @@
 #define A_OFFSET OPERAND_WIDTH
 #define B_OFFSET 0
 
+#define MODE_MASK ((1 << ADDRESSING_MODE_WIDTH) - 1)
+#define OPERAND_MASK ((1 << OPERAND_WIDTH) - 1)
+
 #define TYPE_MASK (((1 << INSTRUCTION_TYPE_WIDTH) - 1) << TYPE_OFFSET)
-#define A_MODE_MASK (((1 << ADDRESSING_MODE_WIDTH) - 1) << A_MODE_OFFSET)
-#define B_MODE_MASK (((1 << ADDRESSING_MODE_WIDTH) - 1) << B_MODE_OFFSET)
-#define A_MASK (((1 << OPERAND_WIDTH) - 1) << A_OFFSET)
-#define B_MASK (((1 << OPERAND_WIDTH) - 1) << B_OFFSET)
+#define A_MODE_MASK (MODE_MASK << A_MODE_OFFSET)
+#define B_MODE_MASK (MODE_MASK << B_MODE_OFFSET)
+#define A_MASK (OPERAND_MASK << A_OFFSET)
+#define B_MASK (OPERAND_MASK << B_OFFSET)
 
 typedef struct instruction {
     unsigned int type: INSTRUCTION_TYPE_WIDTH;
@@ -64,7 +67,7 @@ typedef struct instruction {
 
 typedef struct operand {
     unsigned int mode: ADDRESSING_MODE_WIDTH;
-    int value: OPERAND_WIDTH;
+    unsigned int value: OPERAND_WIDTH;
 } operand;
 
 typedef uint32_t opcode;

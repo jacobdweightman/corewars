@@ -38,8 +38,8 @@ jmp                 return JMP;
 jmz                 return JMZ;
 djz                 return DJZ;
 cmp                 return CMP;
--{0,1}[0-9]+        { yylval.integer = strtol(yytext, &eoi, 10) & 0x7FF; return INTEGER; }
-0x[0-9a-f]+         { yylval.integer = strtol(yytext, &eoi, 16) & 0x7FF; return INTEGER; }
+-{0,1}[0-9]+        { yylval.integer = strtol(yytext, &eoi, 10) & OPERAND_MASK; return INTEGER; }
+0x[0-9a-f]+         { yylval.integer = strtol(yytext, &eoi, 16) & OPERAND_MASK; return INTEGER; }
 [ \t\n]+            ;
 \/\/[^\n]*          ;
 .                   { return yytext[0]; }

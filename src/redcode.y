@@ -116,15 +116,15 @@ ind_operand     : '@' INTEGER   {
 inline opcode generate_opcode(unsigned int type, operand* A, operand* B) {
     opcode result = 0;
 
-    result |= B->value;
-    result |= (B->mode << (2*OPERAND_WIDTH));
+    result |= (B->value << B_OFFSET);
+    result |= (B->mode << B_MODE_OFFSET);
 
     if(A != NULL) {
-        result |= (A->value << OPERAND_WIDTH);
-        result |= (A->mode << (2*OPERAND_WIDTH + ADDRESSING_MODE_WIDTH));
+        result |= (A->value << A_OFFSET);
+        result |= (A->mode << A_MODE_OFFSET);
     }
 
-    result |= (type << (2*OPERAND_WIDTH + 2*ADDRESSING_MODE_WIDTH));
+    result |= (type << TYPE_OFFSET);
 
     return result;
 }
