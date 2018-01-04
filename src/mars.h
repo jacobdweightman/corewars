@@ -21,15 +21,31 @@
 #ifndef COREWARS_1984_MARS_H_
 #define COREWARS_1984_MARS_H_
 
-#include <stdlib.h>
-
 #include "program.h"
 
 #define CORE_SIZE 4096
 #define MEMORY_BLOCKS CORE_SIZE / MAX_PROGRAM_SIZE
 
-#define CORE_WRAP(addr) abs(addr) % CORE_SIZE
+#define CORE_WRAP(addr) addr % CORE_SIZE // NOTE: may require call to abs
 
+void print_block(int index);
 unsigned int randuint();
+instruction get_instruction(opcode op);
+void load_program(program* prog);
+program read_program(FILE* f);
+int get_operand_value(int index, unsigned int mode, unsigned int raw_value);
+int get_operand_address(int index, unsigned int mode, unsigned int raw_value);
+
+/* Converts an unsigned 12-bit value into a signed int. */
+static inline int get_signed_operand_value(unsigned int raw_value) {
+    int value = raw_value;
+
+    if(raw_value & (1 << (OPERAND_WIDTH - 1))) { // value is negative (MSB is 1)
+        value ^= (1 << (OPERAND_WIDTH - 1));
+        value -= 0x800;
+    }
+
+    return value;
+}
 
 #endif

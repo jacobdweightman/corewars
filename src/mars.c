@@ -125,13 +125,8 @@ program read_program(FILE* f) {
 /* Returns as a signed int the value of an operand from an instruction at the
  * given address, with the given addressing mode, and with the given value.
  * This function assumes the given value occupies only its rightmost 12 bits. */
-int get_operand_value(int index, unsigned int mode, unsigned int value) {
-    printf("value: %d\n", value);
-    // convert value to oridinary full-width signed int
-    if(value & (1 << (OPERAND_WIDTH - 1))) { // value is negative (MSB is set)
-        value = -0x800 + value;
-        printf("negative: %d\n", value);
-    }
+int get_operand_value(int index, unsigned int mode, unsigned int raw_value) {
+    int value = get_signed_operand_value(raw_value);
 
     switch (mode) {
         case IMMEDIATE_MODE:
@@ -139,10 +134,25 @@ int get_operand_value(int index, unsigned int mode, unsigned int value) {
         case RELATIVE_MODE:
             return core[CORE_WRAP(index+value)];
         case INDIRECT_MODE:
-            return core[core[CORE_WRAP(index+value)]];
+            return core[CORE_WRAP(core[CORE_WRAP(index+value)])];
         default:
             printf("died: invalid addressing mode\n");
             return 0xFFFF;
+    }
+}
+
+/* Returns the index pointed to by the given operand. */
+int get_operand_address(int index, unsigned int mode, unsigned int raw_value) {
+    int value = get_signed_operand_value(raw_value);
+
+    switch (mode) {
+        case RELATIVE_MODE:
+            return CORE_WRAP(index + value);
+        case INDIRECT_MODE:
+            return CORE_WRAP(index + core[CORE_WRAP(index + value)]);
+        default:
+            printf("died: expected address type\n");
+            return -1;
     }
 }
 
@@ -163,47 +173,54 @@ int main() {
     // fclose(f);
 
     // run 10 cycles
-    for(int i=0; i<3; i++) {
+    for(int i=0; i<30; i++) {
         for(int j=0; j<program_count; j++) {
             int addr = programs[j]->PC;
             instruction instr = get_instruction(core[addr]);
 
-            printf("addr: %d\n", addr+1);
-            //printf("value: %x\n", core[addr]);
-            printf("A: %d\n", get_operand(addr, instr.a_mode, instr.a));
-            printf("B: %d\n", get_operand(addr, instr.b_mode, instr.b));
+            printf("addr: %d\n", addr);
+            int a = get_operand_value(addr, instr.a_mode, instr.a);
+            int b = get_operand_value(addr, instr.b_mode, instr.b);
+            int b_addr = get_operand_address(addr, instr.b_mode, instr.b);
+            printf("A: %d, B: %d, dest: %d\n", a, b, b_addr);
 
             switch (instr.type) {
                 case MOV_TYPE:
-                    printf("MOV\n");
+                    core[b_addr] = a;
                     break;
                 case ADD_TYPE:
-                    printf("ADD\n");
+                    core[b_addr] += a;
                     break;
                 case SUB_TYPE:
-                    printf("SUB\n");
+                    core[b_addr] -= a;
                     break;
                 case JMP_TYPE:
-                    printf("JMP\n");
+                    programs[j]->PC = b_addr - 1;
                     break;
                 case JMZ_TYPE:
-                    printf("JMZ\n");
+                    if(a == 0) {
+                        programs[j]->PC = b_addr - 1;
+                    }
                     break;
                 case DJZ_TYPE:
-                    printf("DJZ\n");
+                    if(--a == 0) {
+                        programs[j]->PC = b_addr - 1;
+                    }
                     break;
                 case CMP_TYPE:
-                    printf("CMP\n");
+                    if(a != b) {
+                        (programs[j]->PC)++;
+                    }
                     break;
                 default:
                     printf("died\n");
             }
 
-            programs[j]->PC += 1;
+            (programs[j]->PC)++;
         }
     }
 
-    //print_block(0);
+    print_block(0);
 
     return 0;
 }
