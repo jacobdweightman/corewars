@@ -27,9 +27,9 @@
 #define ADDRESSING_MODE_WIDTH 2
 #define OPERAND_WIDTH 12
 
-#define IMMEDIATE_MODE 0b00
-#define RELATIVE_MODE 0b01
-#define INDIRECT_MODE 0b10
+#define IMMEDIATE_MODE 0x0
+#define RELATIVE_MODE 0x1
+#define INDIRECT_MODE 0x2
 
 #define DAT_TYPE 0
 #define MOV_TYPE 1
@@ -42,12 +42,24 @@
 
 #define MAX_PROGRAM_SIZE 256
 
+#define TYPE_OFFSET (2 * OPERAND_WIDTH + 2 * ADDRESSING_MODE_WIDTH)
+#define A_MODE_OFFSET (2 * OPERAND_WIDTH + ADDRESSING_MODE_WIDTH)
+#define B_MODE_OFFSET (2 * OPERAND_WIDTH)
+#define A_OFFSET OPERAND_WIDTH
+#define B_OFFSET 0
+
+#define TYPE_MASK (((1 << INSTRUCTION_TYPE_WIDTH) - 1) << TYPE_OFFSET)
+#define A_MODE_MASK (((1 << ADDRESSING_MODE_WIDTH) - 1) << A_MODE_OFFSET)
+#define B_MODE_MASK (((1 << ADDRESSING_MODE_WIDTH) - 1) << B_MODE_OFFSET)
+#define A_MASK (((1 << OPERAND_WIDTH) - 1) << A_OFFSET)
+#define B_MASK (((1 << OPERAND_WIDTH) - 1) << B_OFFSET)
+
 typedef struct instruction {
     unsigned int type: INSTRUCTION_TYPE_WIDTH;
     unsigned int a_mode: ADDRESSING_MODE_WIDTH;
     unsigned int b_mode: ADDRESSING_MODE_WIDTH;
-    int a: OPERAND_WIDTH;
-    int b: OPERAND_WIDTH;
+    unsigned int a: OPERAND_WIDTH;
+    unsigned int b: OPERAND_WIDTH;
 } instruction;
 
 typedef struct operand {
@@ -59,7 +71,7 @@ typedef uint32_t opcode;
 
 typedef struct program {
     int player_id;
-    opcode* PC;
+    int PC;
     int size;
     opcode code[MAX_PROGRAM_SIZE];
 } program;

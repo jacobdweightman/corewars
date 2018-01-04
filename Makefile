@@ -15,7 +15,7 @@ assembler: $(TMP)/y.tab.c $(TMP)/lex.yy.c $(TMP)/program.h
 
 mars: $(SOURCE)/mars.c $(SOURCE)/mars.h $(SOURCE)/program.h
 	@mkdir -p build
-	$(COMPILER) $(SOURCE)/mars.c -o $(OUTPUT)/mars
+	$(COMPILER) $(C_FLAGS) $(SOURCE)/mars.c -o $(OUTPUT)/mars
 
 $(TMP)/y.tab.c: $(SOURCE)/redcode.y
 	@mkdir -p $(TMP)
