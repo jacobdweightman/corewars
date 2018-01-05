@@ -23,10 +23,9 @@
 
 #include "program.h"
 
-#define CORE_SIZE 4096
+#define DURATION 1000
+#define CORE_SIZE 257//4096
 #define MEMORY_BLOCKS CORE_SIZE / MAX_PROGRAM_SIZE
-
-#define CORE_WRAP(addr) addr % CORE_SIZE // NOTE: may require call to abs
 
 void print_block(int index);
 unsigned int randuint();

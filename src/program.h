@@ -22,6 +22,7 @@
 #define COREWARS_1984_PROGRAM_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define INSTRUCTION_TYPE_WIDTH 4
 #define ADDRESSING_MODE_WIDTH 2
@@ -74,6 +75,7 @@ typedef uint32_t opcode;
 
 typedef struct program {
     int player_id;
+    bool alive;
     int PC;
     int size;
     opcode code[MAX_PROGRAM_SIZE];

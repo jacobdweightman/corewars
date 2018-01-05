@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <strings.h>
+#include <stdlib.h>
 
 #include "mars.h"
 
@@ -29,6 +30,7 @@ opcode core[CORE_SIZE];
 
 program* programs[MEMORY_BLOCKS];
 int program_count = 0;
+int alive = 0;
 
 void print_block(int index) {
     int base_index = MAX_PROGRAM_SIZE * index;
@@ -96,6 +98,7 @@ void load_program(program* prog) {
 program read_program(FILE* f) {
     program prog;
     prog.player_id = 0;
+    prog.alive = true;
     prog.PC = 0;
     prog.size = 0;
 
@@ -132,9 +135,9 @@ int get_operand_value(int index, unsigned int mode, unsigned int raw_value) {
         case IMMEDIATE_MODE:
             return value;
         case RELATIVE_MODE:
-            return core[CORE_WRAP(index+value)];
+            return core[(index+value) % CORE_SIZE];
         case INDIRECT_MODE:
-            return core[CORE_WRAP(core[CORE_WRAP(index+value)])];
+            return core[(core[(index+value) % CORE_SIZE]) % CORE_SIZE];
         default:
             printf("died: invalid addressing mode\n");
             return 0xFFFF;
@@ -147,13 +150,60 @@ int get_operand_address(int index, unsigned int mode, unsigned int raw_value) {
 
     switch (mode) {
         case RELATIVE_MODE:
-            return CORE_WRAP(index + value);
+            return (index + value) % CORE_SIZE;
         case INDIRECT_MODE:
-            return CORE_WRAP(index + core[CORE_WRAP(index + value)]);
+            return (index + core[(index + value) % CORE_SIZE]) % CORE_SIZE;
+            //return CORE_WRAP(index + core[CORE_WRAP(index + value)]);
         default:
-            printf("died: expected address type\n");
+            //printf("died: expected address type\n");
             return -1;
     }
+}
+
+/* Executes the next instruction for the given program. Returns false if the
+ * instruction was invalid. */
+bool tick(program* prog) {
+        int addr = prog->PC;
+        instruction instr = get_instruction(core[addr]);
+        //printf("addr: %d, value: %x\n", addr, core[addr]);
+
+        int a = get_operand_value(addr, instr.a_mode, instr.a);
+        int b = get_operand_value(addr, instr.b_mode, instr.b);
+        int b_addr = get_operand_address(addr, instr.b_mode, instr.b);
+
+        switch (instr.type) {
+            case MOV_TYPE:
+                core[b_addr] = a;
+                break;
+            case ADD_TYPE:
+                core[b_addr] += a;
+                break;
+            case SUB_TYPE:
+                core[b_addr] -= a;
+                break;
+            case JMP_TYPE:
+                //printf("JMP: %d\n", b_addr);
+                prog->PC = b_addr - 1;
+                break;
+            case JMZ_TYPE:
+                if(a == 0)
+                    prog->PC = b_addr - 1;
+                break;
+            case DJZ_TYPE:
+                if(--a == 0)
+                    prog->PC = b_addr - 1;
+                break;
+            case CMP_TYPE:
+                if(a != b)
+                    (prog->PC)++;
+                break;
+            default:
+                printf("addr %d invalid instruction: %x\n", addr, core[addr]);
+                return false;
+        }
+
+        prog->PC = abs(prog->PC + 1) % CORE_SIZE;
+        return true;
 }
 
 int main() {
@@ -172,52 +222,20 @@ int main() {
 
     // fclose(f);
 
-    // run 10 cycles
-    for(int i=0; i<30; i++) {
+    alive = program_count;
+    int elapsed = 0;
+
+    while(elapsed < DURATION && alive > 0) {
         for(int j=0; j<program_count; j++) {
-            int addr = programs[j]->PC;
-            instruction instr = get_instruction(core[addr]);
-
-            printf("addr: %d\n", addr);
-            int a = get_operand_value(addr, instr.a_mode, instr.a);
-            int b = get_operand_value(addr, instr.b_mode, instr.b);
-            int b_addr = get_operand_address(addr, instr.b_mode, instr.b);
-            printf("A: %d, B: %d, dest: %d\n", a, b, b_addr);
-
-            switch (instr.type) {
-                case MOV_TYPE:
-                    core[b_addr] = a;
-                    break;
-                case ADD_TYPE:
-                    core[b_addr] += a;
-                    break;
-                case SUB_TYPE:
-                    core[b_addr] -= a;
-                    break;
-                case JMP_TYPE:
-                    programs[j]->PC = b_addr - 1;
-                    break;
-                case JMZ_TYPE:
-                    if(a == 0) {
-                        programs[j]->PC = b_addr - 1;
-                    }
-                    break;
-                case DJZ_TYPE:
-                    if(--a == 0) {
-                        programs[j]->PC = b_addr - 1;
-                    }
-                    break;
-                case CMP_TYPE:
-                    if(a != b) {
-                        (programs[j]->PC)++;
-                    }
-                    break;
-                default:
-                    printf("died\n");
+            if(programs[j]->alive) {
+                if(!tick(programs[j])) {
+                    programs[j]->alive = false;
+                    alive--;
+                }
             }
-
-            (programs[j]->PC)++;
         }
+
+        elapsed++;
     }
 
     print_block(0);
