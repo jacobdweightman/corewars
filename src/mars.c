@@ -24,26 +24,6 @@
 
 #include "mars.h"
 
-// CORE
-int blocks[MEMORY_BLOCKS]; // for memory allocation
-opcode core[CORE_SIZE];
-
-program* programs[MEMORY_BLOCKS];
-int program_count = 0;
-int alive = 0;
-
-void print_block(int index) {
-    int base_index = MAX_PROGRAM_SIZE * index;
-
-    for(int i=0; i<MAX_PROGRAM_SIZE / 8; i++) {
-        for(int j=0; j<8; j++) {
-            printf("%08x ", core[base_index + 8*i + j]);
-        }
-
-        printf("\n");
-    }
-}
-
 /* Returns a random unsigned integer from /dev/urandom. */
 unsigned int randuint() {
     unsigned int val;
@@ -53,6 +33,20 @@ unsigned int randuint() {
     fclose(f);
 
     return val;
+}
+
+/* Prints the hex values stored in each memory location of the mars in the given
+ * block of core memory to stdout. */
+void print_block(mars* m, int index) {
+    int base_index = MAX_PROGRAM_SIZE * index;
+
+    for(int i=0; i<MAX_PROGRAM_SIZE / 8; i++) {
+        for(int j=0; j<8; j++) {
+            printf("%08x ", m->core[base_index + 8*i + j]);
+        }
+
+        printf("\n");
+    }
 }
 
 /* Creates an instruction struct and populates its fields with information
@@ -69,29 +63,30 @@ instruction get_instruction(opcode op) {
     return instr;
 }
 
-/* Loads the given program into core memory. Memory is divided into blocks of
- * MAX_PROGRAM_SIZE, and programs are loaded into a random memory block at a
- * random offset between 0 and MAX_PROGRAM_SIZE - prog->size. */
-void load_program(program* prog) {
+/* Loads the given program into core memory of the given mars. Memory is divided
+ * into blocks of MAX_PROGRAM_SIZE, and programs are loaded into a random memory
+ * block at a random offset between 0 and MAX_PROGRAM_SIZE - prog->size. */
+void load_program(mars* m, program* prog) {
     int block = 0;
-    while(blocks[block] != 0) {
+    while(m->blocks[block]) {
         block = randuint() % MEMORY_BLOCKS;
     }
 
-    blocks[block] = 1;
+    m->blocks[block] = true;
 
     int offset = 0; //TODO: randuint() % (MAX_PROGRAM_SIZE - prog->size);
 
     int base_index = block * MAX_PROGRAM_SIZE + offset;
 
     for(int i=0; i<prog->size; i++) {
-        core[base_index+i] = prog->code[i];
+        m->core[base_index+i] = prog->code[i];
     }
 
     prog->PC = base_index;
 
-    programs[program_count] = prog;
-    program_count++;
+    m->programs[m->program_count] = prog;
+    (m->program_count)++;
+    (m->alive)++;
 }
 
 /* Reads a program from the given file handle into a program struct. */
@@ -128,117 +123,125 @@ program read_program(FILE* f) {
 /* Returns as a signed int the value of an operand from an instruction at the
  * given address, with the given addressing mode, and with the given value.
  * This function assumes the given value occupies only its rightmost 12 bits. */
-int get_operand_value(int index, unsigned int mode, unsigned int raw_value) {
+int get_operand_value(mars* m, int index, unsigned int mode,
+                      unsigned int raw_value) {
     int value = get_signed_operand_value(raw_value);
 
     switch (mode) {
         case IMMEDIATE_MODE:
             return value;
         case RELATIVE_MODE:
-            return core[(index+value) % CORE_SIZE];
+            return m->core[(index+value) % CORE_SIZE];
         case INDIRECT_MODE:
-            return core[(core[(index+value) % CORE_SIZE]) % CORE_SIZE];
+            return m->core[(m->core[(index+value) % CORE_SIZE]) % CORE_SIZE];
         default:
             printf("died: invalid addressing mode\n");
             return 0xFFFF;
     }
 }
 
-/* Returns the index pointed to by the given operand. */
-int get_operand_address(int index, unsigned int mode, unsigned int raw_value) {
+/* Returns the index into core memory pointed to by the given operand. */
+int get_operand_address(mars* m, int index, unsigned int mode,
+                        unsigned int raw_value) {
     int value = get_signed_operand_value(raw_value);
 
     switch (mode) {
         case RELATIVE_MODE:
             return (index + value) % CORE_SIZE;
         case INDIRECT_MODE:
-            return (index + core[(index + value) % CORE_SIZE]) % CORE_SIZE;
-            //return CORE_WRAP(index + core[CORE_WRAP(index + value)]);
+            return (index + m->core[(index + value) % CORE_SIZE]) % CORE_SIZE;
         default:
-            //printf("died: expected address type\n");
             return -1;
     }
 }
 
 /* Executes the next instruction for the given program. Returns false if the
  * instruction was invalid. */
-bool tick(program* prog) {
-        int addr = prog->PC;
-        instruction instr = get_instruction(core[addr]);
-        //printf("addr: %d, value: %x\n", addr, core[addr]);
+bool tick(mars* m, program* prog) {
+    int addr = prog->PC;
+    instruction instr = get_instruction(m->core[addr]);
+    printf("addr: %d, value: %x\n", addr, m->core[addr]);
 
-        int a = get_operand_value(addr, instr.a_mode, instr.a);
-        int b = get_operand_value(addr, instr.b_mode, instr.b);
-        int b_addr = get_operand_address(addr, instr.b_mode, instr.b);
+    int a = get_operand_value(m, addr, instr.a_mode, instr.a);
+    int b = get_operand_value(m, addr, instr.b_mode, instr.b);
+    int b_addr = get_operand_address(m, addr, instr.b_mode, instr.b);
 
-        switch (instr.type) {
-            case MOV_TYPE:
-                core[b_addr] = a;
-                break;
-            case ADD_TYPE:
-                core[b_addr] += a;
-                break;
-            case SUB_TYPE:
-                core[b_addr] -= a;
-                break;
-            case JMP_TYPE:
-                //printf("JMP: %d\n", b_addr);
+    switch (instr.type) {
+        case MOV_TYPE:
+            m->core[b_addr] = a;
+            break;
+        case ADD_TYPE:
+            m->core[b_addr] += a;
+            break;
+        case SUB_TYPE:
+            m->core[b_addr] -= a;
+            break;
+        case JMP_TYPE:
+            prog->PC = b_addr - 1;
+            break;
+        case JMZ_TYPE:
+            if(a == 0)
                 prog->PC = b_addr - 1;
-                break;
-            case JMZ_TYPE:
-                if(a == 0)
-                    prog->PC = b_addr - 1;
-                break;
-            case DJZ_TYPE:
-                if(--a == 0)
-                    prog->PC = b_addr - 1;
-                break;
-            case CMP_TYPE:
-                if(a != b)
-                    (prog->PC)++;
-                break;
-            default:
-                printf("addr %d invalid instruction: %x\n", addr, core[addr]);
-                return false;
-        }
+            break;
+        case DJZ_TYPE:
+            if(--a == 0)
+                prog->PC = b_addr - 1;
+            break;
+        case CMP_TYPE:
+            if(a != b)
+                (prog->PC)++;
+            break;
+        default:
+            printf("addr %d invalid instruction: %x\n", addr, m->core[addr]);
+            return false;
+    }
 
-        prog->PC = abs(prog->PC + 1) % CORE_SIZE;
-        return true;
+    prog->PC = abs(prog->PC + 1) % CORE_SIZE;
+    return true;
 }
 
-int main() {
-    memset(core, 0, sizeof(core));
-    memset(blocks, 0, sizeof(blocks));
+/* Initializes a new memory array redcode simulator without any programs. */
+mars create_mars() {
+    mars m;
+    m.program_count = 0;
+    m.alive = 0;
+    m.elapsed = 0;
+    memset(m.core, 0, sizeof(m.core));
+    memset(m.blocks, false, sizeof(m.blocks));
 
-    /*FILE* f = fopen("test/dwarf.hex", "rb");
+    return m;
+}
 
-    if(f == NULL) {
-        fprintf(stderr, "Failed to open file `test/dwarf.hex`\n");
-        return 1;
-    }*/
-
-    program p = read_program(stdin);
-    load_program(&p);
-
-    // fclose(f);
-
-    alive = program_count;
-    int elapsed = 0;
-
-    while(elapsed < DURATION && alive > 0) {
-        for(int j=0; j<program_count; j++) {
-            if(programs[j]->alive) {
-                if(!tick(programs[j])) {
-                    programs[j]->alive = false;
-                    alive--;
+/* Carries out gameplay on the given mars until the game duration is met or no
+ * all programs have terminated. Returns the player_id of the winning program.
+ */
+int play(mars* m) {
+    while(m->elapsed < DURATION && m->alive > 0) {
+        for(int j=0; j<m->program_count; j++) {
+            if(m->programs[j]->alive) {
+                if(!tick(m, m->programs[j])) {
+                    m->programs[j]->alive = false;
+                    (m->alive)--;
                 }
             }
         }
-
-        elapsed++;
     }
 
-    print_block(0);
+    return 0; // TODO: return index of winning program
+}
+
+int main() {
+    mars m = create_mars();
+
+    program p = read_program(stdin);
+    load_program(&m, &p);
+
+    printf("programs: %d\n", m.program_count);
+    printf("alive: %d\n", m.alive);
+
+    play(&m);
+
+    print_block(&m, 0);
 
     return 0;
 }

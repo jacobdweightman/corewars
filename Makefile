@@ -7,7 +7,7 @@ OUTPUT=build
 
 .PHONY: all assembler mars clean
 
-all: assembler
+all: assembler mars
 
 assembler: $(TMP)/y.tab.c $(TMP)/lex.yy.c $(TMP)/program.h
 	@mkdir -p build

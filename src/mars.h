@@ -23,17 +23,30 @@
 
 #include "program.h"
 
-#define DURATION 1000
+#define DURATION 84
 #define CORE_SIZE 257//4096
 #define MEMORY_BLOCKS CORE_SIZE / MAX_PROGRAM_SIZE
 
-void print_block(int index);
+typedef struct mars {
+    int program_count;
+    int alive;
+    int elapsed;
+    program* programs[MEMORY_BLOCKS];
+    opcode core[CORE_SIZE];
+    bool blocks[MEMORY_BLOCKS];
+} mars;
+
 unsigned int randuint();
+void print_block(mars* m, int index);
 instruction get_instruction(opcode op);
-void load_program(program* prog);
+void load_program(mars* m, program* prog);
 program read_program(FILE* f);
-int get_operand_value(int index, unsigned int mode, unsigned int raw_value);
-int get_operand_address(int index, unsigned int mode, unsigned int raw_value);
+int get_operand_value(mars* m, int index, unsigned int mode,
+                      unsigned int raw_value);
+int get_operand_address(mars* m, int index, unsigned int mode,
+                        unsigned int raw_value);
+bool tick(mars* m, program* prog);
+mars create_mars();
 
 /* Converts an unsigned 12-bit value into a signed int. */
 static inline int get_signed_operand_value(unsigned int raw_value) {
