@@ -25,7 +25,7 @@
 #include "mars.h"
 
 /* Returns a random unsigned integer from /dev/urandom. */
-unsigned int randuint() {
+unsigned int randuint(void) {
     unsigned int val;
 
     FILE* f = fopen("/dev/urandom", "r");
@@ -54,7 +54,7 @@ void print_block(mars* m, int index) {
 instruction get_instruction(opcode op) {
     instruction instr;
 
-    instr.type = (op & TYPE_MASK) >> TYPE_OFFSET;
+    instr.type = (op & OP_TYPE_MASK) >> TYPE_OFFSET;
     instr.a_mode = (op & A_MODE_MASK) >> A_MODE_OFFSET;
     instr.b_mode = (op & B_MODE_MASK) >> B_MODE_OFFSET;
     instr.a = (op & A_MASK) >> A_OFFSET;
@@ -97,16 +97,18 @@ program read_program(FILE* f) {
     prog.PC = 0;
     prog.size = 0;
 
+    memset(prog.code, 0, sizeof(prog.code));
+
     if(f) {
         const int size = sizeof(opcode) / sizeof(uint8_t);
         uint8_t data[sizeof(opcode) / sizeof(uint8_t)];
 
-        // read every 4 bytes into code in proper byte order
+        // read every 4 bytes into code in little-endian byte order
         while(fread(data, sizeof(uint8_t), 4, f)) {
             opcode op = 0;
 
             for(int i=0; i<size; i++) {
-                op |= data[i] << (8 * (size - i - 1));
+                op |= ((opcode) data[i] << (8*i));
             }
 
             prog.code[prog.size] = op;
@@ -131,9 +133,12 @@ int get_operand_value(mars* m, int index, unsigned int mode,
         case IMMEDIATE_MODE:
             return value;
         case RELATIVE_MODE:
-            return m->core[(index+value) % CORE_SIZE];
+            raw_value = m->core[(index+value) % CORE_SIZE];
+            return get_signed_operand_value(raw_value);
         case INDIRECT_MODE:
-            return m->core[(m->core[(index+value) % CORE_SIZE]) % CORE_SIZE];
+            raw_value = m->core[(index+value) % CORE_SIZE];
+            raw_value = m->core[raw_value % CORE_SIZE];
+            return get_signed_operand_value(raw_value);
         default:
             printf("died: invalid addressing mode\n");
             return 0xFFFF;
@@ -149,7 +154,7 @@ int get_operand_address(mars* m, int index, unsigned int mode,
         case RELATIVE_MODE:
             return (index + value) % CORE_SIZE;
         case INDIRECT_MODE:
-            return (index + m->core[(index + value) % CORE_SIZE]) % CORE_SIZE;
+            return (index + (int)(m->core[(index + value) % CORE_SIZE])) % CORE_SIZE;
         default:
             return -1;
     }
@@ -168,22 +173,28 @@ bool tick(mars* m, program* prog) {
 
     switch (instr.type) {
         case MOV_TYPE:
-            m->core[b_addr] = a;
+            printf("MOV\n");
+            m->core[b_addr] = (opcode) a;
             break;
         case ADD_TYPE:
-            m->core[b_addr] += a;
+            printf("ADD\n");
+            m->core[b_addr] = (opcode) ((int) m->core[b_addr] + a); // TODO: do this better
             break;
         case SUB_TYPE:
-            m->core[b_addr] -= a;
+            printf("SUB\n");
+            m->core[b_addr] = (opcode) ((int) m->core[b_addr] - a); // TODO: do this better
             break;
         case JMP_TYPE:
+            printf("JMP\n");
             prog->PC = b_addr - 1;
             break;
         case JMZ_TYPE:
+            printf("JMZ\n");
             if(a == 0)
                 prog->PC = b_addr - 1;
             break;
         case DJZ_TYPE:
+            printf("DJZ\n");
             if(--a == 0)
                 prog->PC = b_addr - 1;
             break;
@@ -192,6 +203,8 @@ bool tick(mars* m, program* prog) {
                 (prog->PC)++;
             break;
         default:
+            printf("uh oh... %d\n", instr.type);
+            printf("type: %x modeA: %x modeB: %x opA: %x opB: %x\n", instr.type, instr.a_mode, instr.b_mode, instr.a, instr.b);
             printf("addr %d invalid instruction: %x\n", addr, m->core[addr]);
             return false;
     }
@@ -201,7 +214,7 @@ bool tick(mars* m, program* prog) {
 }
 
 /* Initializes a new memory array redcode simulator without any programs. */
-mars create_mars() {
+mars create_mars(void) {
     mars m;
     m.program_count = 0;
     m.alive = 0;
@@ -228,20 +241,4 @@ int play(mars* m) {
     }
 
     return 0; // TODO: return index of winning program
-}
-
-int main() {
-    mars m = create_mars();
-
-    program p = read_program(stdin);
-    load_program(&m, &p);
-
-    printf("programs: %d\n", m.program_count);
-    printf("alive: %d\n", m.alive);
-
-    play(&m);
-
-    print_block(&m, 0);
-
-    return 0;
 }

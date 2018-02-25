@@ -20,11 +20,16 @@
 
 %{
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "program.h"
 
+#define BITMASK_8 ((1 << 8) - 1)
+
 extern int yylineno;
+extern FILE* yyin;
 
 extern int yylex();
 extern int yyparse();
@@ -129,17 +134,31 @@ inline opcode generate_opcode(unsigned int type, operand* A, operand* B) {
     return result;
 }
 
+/* writes an instruction into the output buffer */
 void write_instruction(unsigned int type, operand* A, operand* B) {
     output[instruction_index] = generate_opcode(type, A, B);
     instruction_index++;
 }
 
-int main() {
+/* Takes an input and output file. Reads a Redcode program from the input,
+ * and writes machine code to the output. */
+int assemble(FILE* input_stream, FILE* output_stream) {
+    memset(output, 0, sizeof(output));
+    instruction_index = 0;
+
+    yyin = input_stream;
+
     int ret = yyparse();
 
     for(int i=0; i<instruction_index; i++) {
-        printf("%X\n", output[i]);
+        for(int j=0; j<4; j++) { // output is little endian
+            uint8_t c = ((output[i] & (BITMASK_8 << (8*j))) >> (8*j));
+            //printf("%c", c);
+            fprintf(output_stream, "%c", c);
+        }
     }
+
+    fflush(output_stream);
 
     return ret;
 }

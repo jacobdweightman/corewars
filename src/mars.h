@@ -36,7 +36,7 @@ typedef struct mars {
     bool blocks[MEMORY_BLOCKS];
 } mars;
 
-unsigned int randuint();
+unsigned int randuint(void);
 void print_block(mars* m, int index);
 instruction get_instruction(opcode op);
 void load_program(mars* m, program* prog);
@@ -46,18 +46,31 @@ int get_operand_value(mars* m, int index, unsigned int mode,
 int get_operand_address(mars* m, int index, unsigned int mode,
                         unsigned int raw_value);
 bool tick(mars* m, program* prog);
-mars create_mars();
+mars create_mars(void);
+int play(mars* m);
 
 /* Converts an unsigned 12-bit value into a signed int. */
 static inline int get_signed_operand_value(unsigned int raw_value) {
-    int value = raw_value;
+
+    int value;
+
+    if(raw_value & (1 << (OPERAND_WIDTH - 1))) { // value is negative (MSB is 1)
+        raw_value = (~raw_value + 1) & OPERAND_MASK; // get magnitude
+        value = (int) raw_value;
+        return -value;
+    } else {
+        return (int) raw_value;
+    }
+
+
+    /*int value = raw_value;
 
     if(raw_value & (1 << (OPERAND_WIDTH - 1))) { // value is negative (MSB is 1)
         value ^= (1 << (OPERAND_WIDTH - 1));
         value -= 0x800;
     }
 
-    return value;
+    return value;*/
 }
 
 #endif
