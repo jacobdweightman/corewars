@@ -46,11 +46,11 @@ void test_create_mars(void) {
     TEST_ASSERT_EQUAL(m.elapsed, 0);
     TEST_ASSERT_EQUAL(m.program_count, 0);
 
-    for(int i=0; i<sizeof(m.core)/sizeof(m.core[0]); i++) {
+    for(int i=0; i<CORE_SIZE; i++) {
         TEST_ASSERT_EQUAL_UINT32(m.core[i], 0);
     }
 
-    for(int i=0; i<sizeof(m.blocks)/sizeof(m.blocks[0]); i++) {
+    for(int i=0; i<MEMORY_BLOCKS; i++) {
         TEST_ASSERT_FALSE(m.blocks[i]);
     }
 }

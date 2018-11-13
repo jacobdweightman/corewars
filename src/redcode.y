@@ -26,7 +26,7 @@
 
 #include "program.h"
 
-#define BITMASK_8 ((1 << 8) - 1)
+#define BITMASK_8 ((unsigned int) (1 << 8) - 1)
 
 extern int yylineno;
 extern FILE* yyin;
@@ -94,7 +94,7 @@ relind_operand  : rel_operand
 imm_operand     : '#' INTEGER   {
                                     operand op;
                                     op.mode = IMMEDIATE_MODE;
-                                    op.value = $2;
+                                    op.value = (unsigned int) $2;
                                     $$ = op;
                                 }
 ;
@@ -102,7 +102,7 @@ imm_operand     : '#' INTEGER   {
 rel_operand     : INTEGER       {
                                     operand op;
                                     op.mode = RELATIVE_MODE;
-                                    op.value = $1;
+                                    op.value = (unsigned int) $1;
                                     $$ = op;
                                 }
 ;
@@ -110,7 +110,7 @@ rel_operand     : INTEGER       {
 ind_operand     : '@' INTEGER   {
                                     operand op;
                                     op.mode = INDIRECT_MODE;
-                                    op.value = $2;
+                                    op.value = (unsigned int) $2;
                                     $$ = op;
                                 }
 ;
@@ -121,12 +121,12 @@ ind_operand     : '@' INTEGER   {
 inline opcode generate_opcode(unsigned int type, operand* A, operand* B) {
     opcode result = 0;
 
-    result |= (B->value << B_OFFSET);
-    result |= (B->mode << B_MODE_OFFSET);
+    result |= ((opcode) B->value << B_OFFSET);
+    result |= ((opcode) B->mode << B_MODE_OFFSET);
 
     if(A != NULL) {
-        result |= (A->value << A_OFFSET);
-        result |= (A->mode << A_MODE_OFFSET);
+        result |= ((opcode) A->value << A_OFFSET);
+        result |= ((opcode) A->mode << A_MODE_OFFSET);
     }
 
     result |= (type << TYPE_OFFSET);
@@ -151,8 +151,8 @@ int assemble(FILE* input_stream, FILE* output_stream) {
     int ret = yyparse();
 
     for(int i=0; i<instruction_index; i++) {
-        for(int j=0; j<4; j++) { // output is little endian
-            uint8_t c = ((output[i] & (BITMASK_8 << (8*j))) >> (8*j));
+        for(int j=0; j<32; j += 8) { // output is little endian
+            uint8_t c = (uint8_t) ((output[i] & (BITMASK_8 << j)) >> j);
             //printf("%c", c);
             fprintf(output_stream, "%c", c);
         }

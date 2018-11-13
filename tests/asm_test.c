@@ -25,7 +25,7 @@
 #include "../lib/unity/unity.h"
 #include "../src/redcode.h"
 
-void test_prog(char* path, uint8_t expected[]) {
+void test_prog(char* path, int8_t expected[]) {
     FILE* prog = fopen(path, "r");
     TEST_ASSERT_NOT_NULL(prog);
 
@@ -43,7 +43,7 @@ void test_prog(char* path, uint8_t expected[]) {
 }
 
 void test_nop(void) {
-    uint8_t expected[1024] = {
+    int8_t expected[1024] = {
         '\x00', '\x00', '\x00', '\x41'
     };
 
@@ -51,7 +51,7 @@ void test_nop(void) {
 }
 
 void test_imp(void) {
-    uint8_t expected[1024] = {
+    int8_t expected[1024] = {
         '\x01', '\x00', '\x00', '\x15'
     };
 
@@ -59,7 +59,7 @@ void test_imp(void) {
 }
 
 void test_dwarf(void) {
-    uint8_t expected[1024] = {
+    int8_t expected[1024] = {
         '\x03', '\x40', '\x00', '\x21',
         '\x02', '\x10', '\x00', '\x12',
         '\xFE', '\x0F', '\x00', '\x41',
@@ -70,7 +70,7 @@ void test_dwarf(void) {
 }
 
 void test_gemini(void) {
-    uint8_t expected[1024] = {
+    int8_t expected[1024] = {
         '\x3B', '\x00', '\x00', '\x11',
         '\x3C', '\x20', '\x03', '\x11',
         '\x07', '\x60', '\x00', '\x1A',

@@ -30,7 +30,7 @@ TMP=tmp
 TEST=tests
 OUTPUT=build
 
-.PHONY: all assembler mars test clean
+.PHONY: all assembler mars test asm_test mars_test examples clean
 
 all: assembler mars
 
@@ -54,10 +54,15 @@ $(TMP)/program.h: $(SOURCE)/program.h
 	@mkdir -p $(TMP)
 	cp $(SOURCE)/program.h $(TMP)
 
-test: $(TEST)/asm_test.c $(TMP)/lex.yy.c $(TMP)/y.tab.c
+test: asm_test mars_test
+	./$(TMP)/asm_test
+	./$(TMP)/mars_test
+
+asm_test: assembler $(TEST)/asm_test.c
 	$(COMPILER) $(TMP)/lex.yy.c $(TMP)/y.tab.c ./$(LIB)/unity/unity.c $(TEST)/asm_test.c -o $(TMP)/asm_test
-	$(COMPILER) $(SOURCE)/mars.c ./$(LIB)/unity/unity.c $(TEST)/mars_test.c -o $(TMP)/mars_test
-	#./$(TMP)/asm_test
+
+mars_test: mars $(TEST)/mars_test.c
+	$(COMPILER) $(C_FLAGS) $(SOURCE)/mars.c ./$(LIB)/unity/unity.c $(TEST)/mars_test.c -o $(TMP)/mars_test
 
 examples: program
 
