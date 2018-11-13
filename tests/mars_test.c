@@ -127,11 +127,15 @@ void test_read_program(void) {
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(expected_code, prog.code, MAX_PROGRAM_SIZE);
 }
 
+void test_load_program(void) {
+
+}
 
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_create_mars);
     RUN_TEST(test_read_program);
+    RUN_TEST(test_load_program);
     UNITY_END();
 
     return 0;

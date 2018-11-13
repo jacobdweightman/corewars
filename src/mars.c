@@ -63,19 +63,48 @@ instruction get_instruction(opcode op) {
     return instr;
 }
 
-/* Loads the given program into core memory of the given mars. Memory is divided
- * into blocks of MAX_PROGRAM_SIZE, and programs are loaded into a random memory
- * block at a random offset between 0 and MAX_PROGRAM_SIZE - prog->size. */
-void load_program(mars* m, program* prog) {
-    int block = 0;
-    while(m->blocks[block]) {
-        block = randuint() % MEMORY_BLOCKS;
+/* Chooses a random, unoccupied block into which to load a program, marks
+ * it as occupied, and returns its number. If the core is full, it will
+ * return -1. Note that this function will likely run slowly when a large
+ * fraction of blocks are occupied. */
+int get_block(mars* m) {
+    // if core is full, return -1
+    bool full = true;
+
+    for(int i=0; i<MEMORY_BLOCKS; i++) {
+      if(!m->blocks[i]) {
+        full = false;
+        break;
+      }
     }
+
+    if(full) {
+      return -1;
+    }
+
+    // pick a random free block
+    int block;
+
+    do {
+        block = randuint() % MEMORY_BLOCKS;
+    } while(m->blocks[block]);
 
     m->blocks[block] = true;
 
-    int offset = 0; //TODO: randuint() % (MAX_PROGRAM_SIZE - prog->size);
+    return block;
+}
 
+/* Returns a random offset within a block such that the program fits between
+ * block_base + offset and block_base + block_size. */
+unsigned int get_offset(program* prog) {
+    return randuint() % (unsigned int)(MAX_PROGRAM_SIZE - prog->size + 1);
+}
+
+/* Loads the given program into the given block of core memory of the given
+ * mars. Memory is divided into blocks of MAX_PROGRAM_SIZE, and programs are
+ * loaded into a random memory block at a random offset between 0 (inclusive)
+ * and MAX_PROGRAM_SIZE - prog->size (inclusive). */
+void load_program(mars* m, program* prog, int block, int offset) {
     int base_index = block * MAX_PROGRAM_SIZE + offset;
 
     for(int i=0; i<prog->size; i++) {

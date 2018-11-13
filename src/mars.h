@@ -39,7 +39,7 @@ typedef struct mars {
 unsigned int randuint(void);
 void print_block(mars* m, int index);
 instruction get_instruction(opcode op);
-void load_program(mars* m, program* prog);
+void load_program(mars* m, program* prog, int block, int offset);
 program read_program(FILE* f);
 int get_operand_value(mars* m, int index, unsigned int mode,
                       unsigned int raw_value);
