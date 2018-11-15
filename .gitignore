@@ -1,6 +1,8 @@
 # project files
 build/*
 tmp/*
+__pycache__/*
+
 
 # Prerequisites
 *.d

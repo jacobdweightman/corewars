@@ -21,30 +21,48 @@
 #ifndef COREWARS_1984_MARS_H_
 #define COREWARS_1984_MARS_H_
 
+#include <stdbool.h>
+
 #include "program.h"
 
-#define DURATION 1000
-#define CORE_SIZE 257//4096
-#define MEMORY_BLOCKS CORE_SIZE / MAX_PROGRAM_SIZE
+typedef struct warrior {
+    unsigned int id;
+    unsigned int PC;
+    struct warrior* prev;
+    struct warrior* next;
+} warrior;
 
-void print_block(int index);
-unsigned int randuint();
-instruction get_instruction(opcode op);
-void load_program(program* prog);
-program read_program(FILE* f);
-int get_operand_value(int index, unsigned int mode, unsigned int raw_value);
-int get_operand_address(int index, unsigned int mode, unsigned int raw_value);
+typedef struct mars {
+    unsigned int core_size;
+    unsigned int block_size;
+    unsigned int duration;
+    unsigned int elapsed;
+    unsigned int alive_count;
+    warrior* next_warrior;
+    opcode* core;
+    bool* blocks;
+} mars;
+
+void destroy_mars(mars* m);
+mars create_mars(unsigned int core_size, unsigned int block_size, unsigned int duration);
+warrior load_program(mars* m, program* prog, unsigned int block, unsigned int offset);
+void tick(mars* m);
+int play(mars* m);
+
+void print_block(mars* m, int index);
 
 /* Converts an unsigned 12-bit value into a signed int. */
 static inline int get_signed_operand_value(unsigned int raw_value) {
-    int value = raw_value;
+
+    int value;
 
     if(raw_value & (1 << (OPERAND_WIDTH - 1))) { // value is negative (MSB is 1)
-        value ^= (1 << (OPERAND_WIDTH - 1));
-        value -= 0x800;
+        raw_value = (~raw_value + 1) & OPERAND_MASK; // get magnitude
+        value = (int) raw_value;
+        return -value;
+    } else {
+        return (int) raw_value;
     }
-
-    return value;
 }
 
 #endif

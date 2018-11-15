@@ -21,224 +21,279 @@
 #include <stdio.h>
 #include <strings.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <limits.h>
 
 #include "mars.h"
+#include "utils.h"
 
-// CORE
-int blocks[MEMORY_BLOCKS]; // for memory allocation
-opcode core[CORE_SIZE];
-
-program* programs[MEMORY_BLOCKS];
-int program_count = 0;
-int alive = 0;
-
-void print_block(int index) {
+/* Prints the hex values stored in each memory location of the mars in the given
+ * block of core memory to stdout. */
+void print_block(mars* m, int index) {
     int base_index = MAX_PROGRAM_SIZE * index;
 
     for(int i=0; i<MAX_PROGRAM_SIZE / 8; i++) {
         for(int j=0; j<8; j++) {
-            printf("%08x ", core[base_index + 8*i + j]);
+            printf("%08x ", m->core[base_index + 8*i + j]);
         }
 
         printf("\n");
     }
 }
 
-/* Returns a random unsigned integer from /dev/urandom. */
-unsigned int randuint() {
-    unsigned int val;
-
-    FILE* f = fopen("/dev/urandom", "r");
-    fread(&val, sizeof(val), 1, f);
-    fclose(f);
-
-    return val;
+/* Deallocates dynamically allocated memory held by the given mars to prevent
+ * memory leaks. This function must be called before a mars falls out of
+ * scope or is freed.
+ *
+ * @param m - the mars to clean up */
+void destroy_mars(mars* m) {
+    free(m->core);
 }
 
-/* Creates an instruction struct and populates its fields with information
- * encoded in the given opcode. */
-instruction get_instruction(opcode op) {
-    instruction instr;
+/* Initializes a new, empty Memory Array Redcode Simulator (MARS) with the given
+ * properties.
+ *
+ * @param core_size - the size of the MARS array, measured in opcodes
+ * @param block_size - the maximum permissible size of a program
+ * @param duration - the number of ticks before the game is declared a draw
+ * @return a new MARS */
+mars create_mars(unsigned int core_size, unsigned int block_size, unsigned int duration) {
+    mars m;
 
-    instr.type = (op & TYPE_MASK) >> TYPE_OFFSET;
-    instr.a_mode = (op & A_MODE_MASK) >> A_MODE_OFFSET;
-    instr.b_mode = (op & B_MODE_MASK) >> B_MODE_OFFSET;
-    instr.a = (op & A_MASK) >> A_OFFSET;
-    instr.b = (op & B_MASK) >> B_OFFSET;
+    m.core_size = core_size;
+    m.block_size = block_size;
+    m.duration = duration;
+    m.elapsed = 0;
+    m.alive_count = 0;
+    m.next_warrior = NULL;
+    m.core = (opcode*) malloc(sizeof(opcode) * core_size);
+    m.blocks = (bool*) malloc(sizeof(bool) * core_size / block_size);
 
-    return instr;
+    return m;
 }
 
-/* Loads the given program into core memory. Memory is divided into blocks of
- * MAX_PROGRAM_SIZE, and programs are loaded into a random memory block at a
- * random offset between 0 and MAX_PROGRAM_SIZE - prog->size. */
-void load_program(program* prog) {
-    int block = 0;
-    while(blocks[block] != 0) {
-        block = randuint() % MEMORY_BLOCKS;
-    }
-
-    blocks[block] = 1;
-
-    int offset = 0; //TODO: randuint() % (MAX_PROGRAM_SIZE - prog->size);
-
-    int base_index = block * MAX_PROGRAM_SIZE + offset;
-
-    for(int i=0; i<prog->size; i++) {
-        core[base_index+i] = prog->code[i];
-    }
-
-    prog->PC = base_index;
-
-    programs[program_count] = prog;
-    program_count++;
-}
-
-/* Reads a program from the given file handle into a program struct. */
-program read_program(FILE* f) {
-    program prog;
-    prog.player_id = 0;
-    prog.alive = true;
-    prog.PC = 0;
-    prog.size = 0;
-
-    if(f) {
-        const int size = sizeof(opcode) / sizeof(uint8_t);
-        uint8_t data[sizeof(opcode) / sizeof(uint8_t)];
-
-        // read every 4 bytes into code in proper byte order
-        while(fread(data, sizeof(uint8_t), 4, f)) {
-            opcode op = 0;
-
-            for(int i=0; i<size; i++) {
-                op |= data[i] << (8 * (size - i - 1));
-            }
-
-            prog.code[prog.size] = op;
-            prog.size++;
-        }
+/* Inserts the given warrior into the mars warrior list, so that it will take
+ * turns executing instructions on the mars. The warrior is inserted after the
+ * next warrior to take its turn, and becomes the next warrior to run. The mars
+ * warrior counter is also incremented.
+ *
+ * @param m - the mars to which the warrior is being added
+ * @param w - the warrior to add to the mars */
+void insert_warrior(mars* m, warrior* w) {
+    if(m->next_warrior == NULL) {
+        w->next = w;
+        w->prev = w;
     } else {
-        printf("You must provide an open file from which to read the program.\n");
-        prog.player_id = -1;
+        // circular doubly-linked list insert
+        warrior* prev = m->next_warrior;
+        warrior* next = prev->next;
+
+        prev->next = w;
+        w->prev = prev;
+        next->prev = w;
+        w->next = next;
     }
 
-    return prog;
+    m->next_warrior = w;
+    (m->alive_count)++;
+}
+
+/* Removes the given warrior into the mars warrior list, so that it will no
+ * longer take turns executing instructions on the mars. If the warrior to be
+ * removed is currently the next to run on the mars, the next to run will change
+ * to the one after. The mars warrior counter is also decremented.
+ *
+ * @param m - the mars from which the warrior is being removed
+ * @param w - the warrior to remove from the mars */
+void remove_warrior(mars* m, warrior* w) {
+    (m->alive_count)--;
+
+    warrior* prev = w->prev;
+    warrior* next = w->next;
+    prev->next = next;
+    next->prev = prev;
+
+    if(m->next_warrior == w) {
+      m->next_warrior = w->next;
+    }
+}
+
+/* Creates a new warrior in the given mars, starting with the code of the given
+ * program. Note that the given block must be free--this method does not check
+ * whether it is free, and will overwrite another program that is loaded there.
+ * Offset must also be less than m->block_size - prog.size
+ *
+ * @param m - the mars to which the new warrior should be added
+ * @param prog - a program with the original code for the new warrior
+ * @param block - the block number in the mars into which to load code
+ * @param offset - the offset within the given block at which to load code
+ * @return the newly created warrior, which has been loaded into m */
+warrior load_program(mars* m, program* prog, unsigned int block, unsigned int offset) {
+    warrior w;
+    w.id = prog->id;
+
+    insert_warrior(m, &w);
+
+    // load program into mars memory
+    opcode* base_addr = m->core + m->block_size * block + offset;
+    strncpy((char*) base_addr, (char*) prog->code, (prog->size)*sizeof(opcode));
+
+    return w;
+}
+
+/* Chooses a random, unoccupied block into which to load a program, marks
+ * it as occupied, and returns its number. If the core is full, it will
+ * return UINT_MAX. Note that this function will likely run slowly when a large
+ * fraction of blocks are occupied. Since the returned block is guaranteed to be
+ * unoccupied, the return value of this function is safe to pass
+ * into load_program.
+ *
+ * @return index of a free block in the given mars */
+unsigned int get_block(mars* m) {
+    // if core is full, return -1
+    bool full = true;
+
+    for(unsigned int i=0; i<(m->core_size / m->block_size); i++) {
+      if(!m->blocks[i]) {
+        full = false;
+        break;
+      }
+    }
+
+    if(full) {
+      return UINT_MAX;
+    }
+
+    // pick a random free block
+    unsigned int block;
+
+    do {
+        block = randuint() % (m->core_size / m->block_size);
+    } while(m->blocks[block]);
+
+    m->blocks[block] = true;
+
+    return block;
+}
+
+/* Chooses a random offset within a block such that the program fits between
+ * block_base + offset and block_base + block_size. The return value of this
+ * function is safe to pass into load_program.
+ *
+ * @return safe offset for the given program within a block */
+unsigned int get_offset(mars* m, program* prog) {
+    return randuint() % (unsigned int)(m->block_size - prog->size + 1);
 }
 
 /* Returns as a signed int the value of an operand from an instruction at the
  * given address, with the given addressing mode, and with the given value.
  * This function assumes the given value occupies only its rightmost 12 bits. */
-int get_operand_value(int index, unsigned int mode, unsigned int raw_value) {
+int get_operand_value(mars* m, int index, unsigned int mode,
+                      unsigned int raw_value) {
     int value = get_signed_operand_value(raw_value);
 
     switch (mode) {
         case IMMEDIATE_MODE:
             return value;
         case RELATIVE_MODE:
-            return core[(index+value) % CORE_SIZE];
+            raw_value = m->core[(index+value) % (int) m->core_size];
+            return get_signed_operand_value(raw_value);
         case INDIRECT_MODE:
-            return core[(core[(index+value) % CORE_SIZE]) % CORE_SIZE];
+            raw_value = m->core[(index+value) % (int) m->core_size];
+            raw_value = m->core[raw_value % m->core_size];
+            return get_signed_operand_value(raw_value);
         default:
             printf("died: invalid addressing mode\n");
             return 0xFFFF;
     }
 }
 
-/* Returns the index pointed to by the given operand. */
-int get_operand_address(int index, unsigned int mode, unsigned int raw_value) {
+/* Compute the address refered to by an operand in the designated addressing
+ * mode. This address is an index into the mars core. If the mode does not give
+ * a valid address, -1 will be returned.
+ *
+ * @param m - the mars whose memory will be referenced
+ * @param index - the address of the executing instruction
+ * @param mode - the addressing mode of the executing instruction
+ * @param raw_value - the operand value bitstring extracted from the instruction
+ * @return the index into core memory pointed to by the given operand */
+int get_operand_address(mars* m, int index, unsigned int mode,
+                        unsigned int raw_value) {
     int value = get_signed_operand_value(raw_value);
+    int addr = (index + value) % (int) m->core_size;
 
     switch (mode) {
         case RELATIVE_MODE:
-            return (index + value) % CORE_SIZE;
+            return addr;
         case INDIRECT_MODE:
-            return (index + core[(index + value) % CORE_SIZE]) % CORE_SIZE;
-            //return CORE_WRAP(index + core[CORE_WRAP(index + value)]);
+            return (index + (int)m->core[addr]) % (int) m->core_size;
         default:
-            //printf("died: expected address type\n");
             return -1;
     }
 }
 
-/* Executes the next instruction for the given program. Returns false if the
- * instruction was invalid. */
-bool tick(program* prog) {
-        int addr = prog->PC;
-        instruction instr = get_instruction(core[addr]);
-        //printf("addr: %d, value: %x\n", addr, core[addr]);
+/* Executes the next instruction for the given program. */
+void tick(mars* m) {
+    warrior* prog = m->next_warrior; // does this fix it?
 
-        int a = get_operand_value(addr, instr.a_mode, instr.a);
-        int b = get_operand_value(addr, instr.b_mode, instr.b);
-        int b_addr = get_operand_address(addr, instr.b_mode, instr.b);
+    int addr = (int) prog->PC;
+    instruction instr = decode(m->core[addr]);
+    printf("addr: %d, value: %x\n", addr, m->core[addr]);
 
-        switch (instr.type) {
-            case MOV_TYPE:
-                core[b_addr] = a;
-                break;
-            case ADD_TYPE:
-                core[b_addr] += a;
-                break;
-            case SUB_TYPE:
-                core[b_addr] -= a;
-                break;
-            case JMP_TYPE:
-                //printf("JMP: %d\n", b_addr);
-                prog->PC = b_addr - 1;
-                break;
-            case JMZ_TYPE:
-                if(a == 0)
-                    prog->PC = b_addr - 1;
-                break;
-            case DJZ_TYPE:
-                if(--a == 0)
-                    prog->PC = b_addr - 1;
-                break;
-            case CMP_TYPE:
-                if(a != b)
-                    (prog->PC)++;
-                break;
-            default:
-                printf("addr %d invalid instruction: %x\n", addr, core[addr]);
-                return false;
-        }
+    int a = get_operand_value(m, addr, instr.a_mode, instr.a);
+    int b = get_operand_value(m, addr, instr.b_mode, instr.b);
+    int b_addr = get_operand_address(m, addr, instr.b_mode, instr.b);
 
-        prog->PC = abs(prog->PC + 1) % CORE_SIZE;
-        return true;
-}
+    switch (instr.type) {
+        case MOV_TYPE:
+            printf("MOV\n");
+            m->core[b_addr] = (opcode) a;
+            break;
+        case ADD_TYPE:
+            printf("ADD\n");
+            m->core[b_addr] = (opcode) ((int) m->core[b_addr] + a); // TODO: do this better
+            break;
+        case SUB_TYPE:
+            printf("SUB\n");
+            m->core[b_addr] = (opcode) ((int) m->core[b_addr] - a); // TODO: do this better
+            break;
+        case JMP_TYPE:
+            printf("JMP\n");
+            prog->PC = (unsigned int) (b_addr - 1) % m->core_size;
+            break;
+        case JMZ_TYPE:
+            printf("JMZ\n");
+            if(a == 0)
+                prog->PC = (unsigned int) (b_addr - 1) % m->core_size;
+            break;
+        case DJZ_TYPE:
+            printf("DJZ\n");
+            if(--a == 0)
+                prog->PC = (unsigned int) (b_addr - 1) % m->core_size;
+            break;
+        case CMP_TYPE:
+            if(a != b)
+                prog->PC = (prog->PC + 1) % m->core_size;
+            break;
+        default:
+            printf("uh oh... %d\n", instr.type);
+            printf("type: %x modeA: %x modeB: %x opA: %x opB: %x\n", instr.type, instr.a_mode, instr.b_mode, instr.a, instr.b);
+            printf("addr %d invalid instruction: %x\n", addr, m->core[addr]);
 
-int main() {
-    memset(core, 0, sizeof(core));
-    memset(blocks, 0, sizeof(blocks));
-
-    /*FILE* f = fopen("test/dwarf.hex", "rb");
-
-    if(f == NULL) {
-        fprintf(stderr, "Failed to open file `test/dwarf.hex`\n");
-        return 1;
-    }*/
-
-    program p = read_program(stdin);
-    load_program(&p);
-
-    // fclose(f);
-
-    alive = program_count;
-    int elapsed = 0;
-
-    while(elapsed < DURATION && alive > 0) {
-        for(int j=0; j<program_count; j++) {
-            if(programs[j]->alive) {
-                if(!tick(programs[j])) {
-                    programs[j]->alive = false;
-                    alive--;
-                }
-            }
-        }
-
-        elapsed++;
+            remove_warrior(m, prog);
     }
 
-    print_block(0);
+    prog->PC = (prog->PC + 1) % m->core_size;
+    m->next_warrior = m->next_warrior->next;
+}
 
-    return 0;
+/* Carries out gameplay on the given mars until the game duration is met or no
+ * all programs have terminated. Returns the player_id of the winning program.
+ */
+int play(mars* m) {
+    while(m->elapsed < m->duration && m->alive_count > 0) {
+      tick(m);
+    }
+
+    return 0; // TODO: return index of winning program
 }

@@ -49,10 +49,11 @@
 #define A_OFFSET OPERAND_WIDTH
 #define B_OFFSET 0
 
+#define TYPE_MASK ((unsigned int) (1 << INSTRUCTION_TYPE_WIDTH) - 1)
 #define MODE_MASK ((1 << ADDRESSING_MODE_WIDTH) - 1)
 #define OPERAND_MASK ((1 << OPERAND_WIDTH) - 1)
 
-#define TYPE_MASK (((1 << INSTRUCTION_TYPE_WIDTH) - 1) << TYPE_OFFSET)
+#define OP_TYPE_MASK (TYPE_MASK << TYPE_OFFSET)
 #define A_MODE_MASK (MODE_MASK << A_MODE_OFFSET)
 #define B_MODE_MASK (MODE_MASK << B_MODE_OFFSET)
 #define A_MASK (OPERAND_MASK << A_OFFSET)
@@ -74,11 +75,15 @@ typedef struct operand {
 typedef uint32_t opcode;
 
 typedef struct program {
-    int player_id;
-    bool alive;
-    int PC;
-    int size;
-    opcode code[MAX_PROGRAM_SIZE];
+    unsigned int id;
+    unsigned long size;
+    opcode* code;
 } program;
+
+instruction decode(opcode op);
+
+void destroy_program(program* prog);
+program prog_from_buffer(unsigned int id, opcode* buf, unsigned long size);
+program prog_from_file(unsigned int id, FILE* f);
 
 #endif

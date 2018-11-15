@@ -20,11 +20,16 @@
 
 %{
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "program.h"
 
+#define BITMASK_8 ((unsigned int) (1 << 8) - 1)
+
 extern int yylineno;
+extern FILE* yyin;
 
 extern int yylex();
 extern int yyparse();
@@ -89,7 +94,7 @@ relind_operand  : rel_operand
 imm_operand     : '#' INTEGER   {
                                     operand op;
                                     op.mode = IMMEDIATE_MODE;
-                                    op.value = $2;
+                                    op.value = (unsigned int) $2;
                                     $$ = op;
                                 }
 ;
@@ -97,7 +102,7 @@ imm_operand     : '#' INTEGER   {
 rel_operand     : INTEGER       {
                                     operand op;
                                     op.mode = RELATIVE_MODE;
-                                    op.value = $1;
+                                    op.value = (unsigned int) $1;
                                     $$ = op;
                                 }
 ;
@@ -105,7 +110,7 @@ rel_operand     : INTEGER       {
 ind_operand     : '@' INTEGER   {
                                     operand op;
                                     op.mode = INDIRECT_MODE;
-                                    op.value = $2;
+                                    op.value = (unsigned int) $2;
                                     $$ = op;
                                 }
 ;
@@ -116,12 +121,12 @@ ind_operand     : '@' INTEGER   {
 inline opcode generate_opcode(unsigned int type, operand* A, operand* B) {
     opcode result = 0;
 
-    result |= (B->value << B_OFFSET);
-    result |= (B->mode << B_MODE_OFFSET);
+    result |= ((opcode) B->value << B_OFFSET);
+    result |= ((opcode) B->mode << B_MODE_OFFSET);
 
     if(A != NULL) {
-        result |= (A->value << A_OFFSET);
-        result |= (A->mode << A_MODE_OFFSET);
+        result |= ((opcode) A->value << A_OFFSET);
+        result |= ((opcode) A->mode << A_MODE_OFFSET);
     }
 
     result |= (type << TYPE_OFFSET);
@@ -129,17 +134,31 @@ inline opcode generate_opcode(unsigned int type, operand* A, operand* B) {
     return result;
 }
 
+/* writes an instruction into the output buffer */
 void write_instruction(unsigned int type, operand* A, operand* B) {
     output[instruction_index] = generate_opcode(type, A, B);
     instruction_index++;
 }
 
-int main() {
+/* Takes an input and output file. Reads a Redcode program from the input,
+ * and writes machine code to the output. */
+int assemble(FILE* input_stream, FILE* output_stream) {
+    memset(output, 0, sizeof(output));
+    instruction_index = 0;
+
+    yyin = input_stream;
+
     int ret = yyparse();
 
     for(int i=0; i<instruction_index; i++) {
-        printf("%X\n", output[i]);
+        for(int j=0; j<32; j += 8) { // output is little endian
+            uint8_t c = (uint8_t) ((output[i] & (BITMASK_8 << j)) >> j);
+            //printf("%c", c);
+            fprintf(output_stream, "%c", c);
+        }
     }
+
+    fflush(output_stream);
 
     return ret;
 }
