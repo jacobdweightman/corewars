@@ -68,7 +68,7 @@ mars_test: mars $(TEST)/mars_test.c
 	$(COMPILER) $(C_FLAGS) $(SOURCE)/utils.c $(SOURCE)/program.c $(SOURCE)/mars.c ./$(LIB)/unity/unity.c $(TEST)/mars_test.c -o $(TMP)/mars_test
 	./$(TMP)/mars_test
 
-	programs:
+programs:
 		./$(OUTPUT)/assembler -o programs/dwarf.hex programs/dwarf.asm
 		./$(OUTPUT)/assembler -o programs/gemini.hex programs/gemini.asm
 		./$(OUTPUT)/assembler -o programs/imp.hex programs/imp.asm

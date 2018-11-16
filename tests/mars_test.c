@@ -27,20 +27,38 @@
 
 #define TEST_ASSERT_EQUAL_OPCODE_ARRAY TEST_ASSERT_EQUAL_UINT32_ARRAY
 
-void test_create_mars(void) {
+void test_create_mars_1(void) {
     mars m = create_mars(256, 64, 100);
-    TEST_ASSERT_EQUAL(m.core_size, 256);
-    TEST_ASSERT_EQUAL(m.block_size, 64);
-    TEST_ASSERT_EQUAL(m.duration, 100);
-    TEST_ASSERT_EQUAL(m.elapsed, 0);
-    TEST_ASSERT_EQUAL(m.alive_count, 0);
-    TEST_ASSERT_EQUAL(m.next_warrior, NULL);
+    TEST_ASSERT_EQUAL(256, m.core_size);
+    TEST_ASSERT_EQUAL(64, m.block_size);
+    TEST_ASSERT_EQUAL(100, m.duration);
+    TEST_ASSERT_EQUAL(0, m.elapsed);
+    TEST_ASSERT_EQUAL(0, m.alive_count);
+    TEST_ASSERT_EQUAL(NULL, m.next_warrior);
 
-    for(unsigned int i=0; i<m.core_size; i++) {
+    for(unsigned int i=0; i<256; i++) {
         TEST_ASSERT_EQUAL_UINT32(m.core[i], 0);
     }
 
-    for(unsigned int i=0; i<(m.core_size / m.block_size); i++) {
+    for(unsigned int i=0; i<4; i++) {
+        TEST_ASSERT_FALSE(m.blocks[i]);
+    }
+}
+
+void test_create_mars_2(void) {
+    mars m = create_mars(21, 5, 50);
+    TEST_ASSERT_EQUAL(21, m.core_size);
+    TEST_ASSERT_EQUAL(5, m.block_size);
+    TEST_ASSERT_EQUAL(50, m.duration);
+    TEST_ASSERT_EQUAL(0, m.elapsed);
+    TEST_ASSERT_EQUAL(0, m.alive_count);
+    TEST_ASSERT_EQUAL(NULL, m.next_warrior);
+
+    for(unsigned int i=0; i<21; i++) {
+        TEST_ASSERT_EQUAL_UINT32(m.core[i], 0);
+    }
+
+    for(unsigned int i=0; i<4; i++) { // last, partial block doesn't count!
         TEST_ASSERT_FALSE(m.blocks[i]);
     }
 }
@@ -141,12 +159,33 @@ void test_remove_warrior_only(void) {
 }
 
 void test_load_program(void) {
+    mars m = create_mars(10, 5, 100);
+    opcode* buf = (opcode*) "\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\x07\x06\x05\x04";
+    program prog = prog_from_buffer(5, buf, 3);
 
+    for(unsigned int i=0; i<m.core_size; i++) {
+        TEST_ASSERT_EQUAL_UINT32(0, m.core[i]);
+    }
+
+    load_program(&m, &prog, 0, 0);
+    load_program(&m, &prog, 1, 2);
+
+    TEST_ASSERT_EQUAL(0x0c0d0e0f, m.core[0]);
+    TEST_ASSERT_EQUAL(0x08090a0b, m.core[1]);
+    TEST_ASSERT_EQUAL(0x04050607, m.core[2]);
+    TEST_ASSERT_EQUAL(0x00000000, m.core[3]);
+    TEST_ASSERT_EQUAL(0x00000000, m.core[4]);
+    TEST_ASSERT_EQUAL(0x00000000, m.core[5]);
+    TEST_ASSERT_EQUAL(0x00000000, m.core[6]);
+    TEST_ASSERT_EQUAL(0x0c0d0e0f, m.core[7]);
+    TEST_ASSERT_EQUAL(0x08090a0b, m.core[8]);
+    TEST_ASSERT_EQUAL(0x04050607, m.core[9]);
 }
 
 int main() {
     UNITY_BEGIN();
-    RUN_TEST(test_create_mars);
+    RUN_TEST(test_create_mars_1);
+    RUN_TEST(test_create_mars_2);
     RUN_TEST(test_insert_warrior_empty);
     RUN_TEST(test_insert_warrior);
     RUN_TEST(test_remove_warrior_middle);

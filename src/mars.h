@@ -52,7 +52,7 @@ void tick(mars* m);
 int play(mars* m);
 
 // DEBUG FUNCTIONS
-void print_block(mars* m, int index);
+void print_block(mars* m, unsigned int index);
 
 #ifdef TEST_BUILD
 void insert_warrior(mars* m, warrior* w);

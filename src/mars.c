@@ -29,11 +29,11 @@
 
 /* Prints the hex values stored in each memory location of the mars in the given
  * block of core memory to stdout. */
-void print_block(mars* m, int index) {
-    int base_index = MAX_PROGRAM_SIZE * index;
+void print_block(mars* m, unsigned int index) {
+    unsigned int base_index = m->block_size * index;
 
-    for(int i=0; i<MAX_PROGRAM_SIZE / 8; i++) {
-        for(int j=0; j<8; j++) {
+    for(unsigned int i=0; i<m->block_size / 8 + 1; i++) {
+        for(unsigned int j=0; j<8 && j<m->block_size; j++) {
             printf("%08x ", m->core[base_index + 8*i + j]);
         }
 
@@ -68,6 +68,9 @@ mars create_mars(unsigned int core_size, unsigned int block_size, unsigned int d
     m.next_warrior = NULL;
     m.core = (opcode*) malloc(sizeof(opcode) * core_size);
     m.blocks = (bool*) malloc(sizeof(bool) * core_size / block_size);
+
+    memset(m.core, 0, sizeof(opcode) * core_size);
+    memset(m.blocks, 0, sizeof(bool) * core_size / block_size);
 
     return m;
 }
