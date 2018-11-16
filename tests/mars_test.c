@@ -45,8 +45,20 @@ void test_create_mars(void) {
     }
 }
 
+void test_insert_warrior_empty(void) {
+    mars m;
+    warrior a;
+
+    insert_warrior(&m, &a);
+
+    // verify traversal order is a, a, ...
+    TEST_ASSERT_EQUAL(&a, m.next_warrior);
+    m.next_warrior = m.next_warrior->next;
+    TEST_ASSERT_EQUAL(&a, m.next_warrior);
+}
+
 void test_insert_warrior(void) {
-    mars m = create_mars(100, 10, 100);
+    mars m;
     warrior a, b, c, d;
 
     // insert, verify that newly inserted is always next to run
@@ -62,7 +74,7 @@ void test_insert_warrior(void) {
     // move from last inserted back to first
     m.next_warrior = m.next_warrior->next;
 
-    // verify traversal order is correct
+    // verify traversal order is a, b, c, d, a, ...
     TEST_ASSERT_EQUAL(&a, m.next_warrior);
     m.next_warrior = m.next_warrior->next;
     TEST_ASSERT_EQUAL(&b, m.next_warrior);
@@ -74,8 +86,8 @@ void test_insert_warrior(void) {
     TEST_ASSERT_EQUAL(&a, m.next_warrior);
 }
 
-void test_remove_warrior(void) {
-    mars m = create_mars(100, 10, 100);
+void test_remove_warrior_middle(void) {
+    mars m;
     warrior a, b, c, d;
 
     insert_warrior(&m, &a);
@@ -86,7 +98,7 @@ void test_remove_warrior(void) {
     // remove warrior that is not next to run
     remove_warrior(&m, &b);
 
-    // verify d, a, b, c --> d, a, c
+    // verify sequence changes from d, a, b, c --> d, a, c
     TEST_ASSERT_EQUAL(&d, m.next_warrior);
     m.next_warrior = m.next_warrior->next;
     TEST_ASSERT_EQUAL(&a, m.next_warrior);
@@ -94,16 +106,38 @@ void test_remove_warrior(void) {
     TEST_ASSERT_EQUAL(&c, m.next_warrior);
     m.next_warrior = m.next_warrior->next;
     TEST_ASSERT_EQUAL(&d, m.next_warrior);
+}
 
-    // remove warrior that is next to run
+void test_remove_warrior_next(void) {
+    mars m;
+    warrior a, b, c, d;
+
+    insert_warrior(&m, &a);
+    insert_warrior(&m, &b);
+    insert_warrior(&m, &c);
+    insert_warrior(&m, &d);
+
     remove_warrior(&m, &d);
 
-    // verify d, a, c --> a, c
+    // verify d, a, b, c --> a, b, c
     TEST_ASSERT_EQUAL(&a, m.next_warrior);
+    m.next_warrior = m.next_warrior->next;
+    TEST_ASSERT_EQUAL(&b, m.next_warrior);
     m.next_warrior = m.next_warrior->next;
     TEST_ASSERT_EQUAL(&c, m.next_warrior);
     m.next_warrior = m.next_warrior->next;
     TEST_ASSERT_EQUAL(&a, m.next_warrior);
+}
+
+void test_remove_warrior_only(void) {
+    mars m;
+    warrior a;
+
+    insert_warrior(&m, &a);
+
+    remove_warrior(&m, &a);
+
+    TEST_ASSERT_EQUAL(NULL, m.next_warrior);
 }
 
 void test_load_program(void) {
@@ -113,8 +147,11 @@ void test_load_program(void) {
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_create_mars);
+    RUN_TEST(test_insert_warrior_empty);
     RUN_TEST(test_insert_warrior);
-    RUN_TEST(test_remove_warrior);
+    RUN_TEST(test_remove_warrior_middle);
+    RUN_TEST(test_remove_warrior_next);
+    RUN_TEST(test_remove_warrior_only);
     RUN_TEST(test_load_program);
     UNITY_END();
 

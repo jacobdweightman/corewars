@@ -31,15 +31,18 @@ void test_prog_from_buffer(void) {
     opcode* buf;
     program prog;
 
-    // case 1: a valid program
     buf = (opcode*) "\x0f\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b";
     prog = prog_from_buffer(5, buf, 3);
 
     TEST_ASSERT_EQUAL(prog.id, 5);
     TEST_ASSERT_EQUAL(prog.size, 3);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(buf, prog.code, 3);
+}
 
-    // case 2: a valid program with null byte
+void test_prog_from_buffer_with_null(void) {
+    opcode* buf;
+    program prog;
+
     buf = (opcode*) "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x08\x09\x0a\x0b";
     prog = prog_from_buffer(2, buf, 4);
 
@@ -48,12 +51,11 @@ void test_prog_from_buffer(void) {
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(buf, prog.code, 4);
 }
 
-void test_prog_from_file(void) {
+void test_prog_from_file_nop(void) {
     FILE* f;
     program prog;
     opcode expected[100];
 
-    // case 1: loop program
     expected[0] = 0x41000000;
 
     f = fopen("programs/nop.hex", "r");
@@ -66,8 +68,13 @@ void test_prog_from_file(void) {
     TEST_ASSERT_EQUAL(prog.id, 3);
     TEST_ASSERT_EQUAL(prog.size, 1);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(expected, prog.code, 1);
+}
 
-    // case 2: imp program
+void test_prog_from_file_imp(void) {
+    FILE* f;
+    program prog;
+    opcode expected[100];
+
     expected[0] = 0x15000001;
 
     f = fopen("programs/imp.hex", "r");
@@ -80,8 +87,13 @@ void test_prog_from_file(void) {
     TEST_ASSERT_EQUAL(prog.id, 7);
     TEST_ASSERT_EQUAL(prog.size, 1);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(expected, prog.code, 1);
+}
 
-    // case 3: dwarf program
+void test_prog_from_file_dwarf(void) {
+    FILE* f;
+    program prog;
+    opcode expected[100];
+
     expected[0] = 0x21004003;
     expected[1] = 0x12001002;
     expected[2] = 0x41000FFE;
@@ -102,7 +114,10 @@ void test_prog_from_file(void) {
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_prog_from_buffer);
-    RUN_TEST(test_prog_from_file);
+    RUN_TEST(test_prog_from_buffer_with_null);
+    RUN_TEST(test_prog_from_file_nop);
+    RUN_TEST(test_prog_from_file_imp);
+    RUN_TEST(test_prog_from_file_dwarf);
     UNITY_END();
 
     return 0;

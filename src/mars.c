@@ -106,16 +106,22 @@ void insert_warrior(mars* m, warrior* w) {
  * @param m - the mars from which the warrior is being removed
  * @param w - the warrior to remove from the mars */
 void remove_warrior(mars* m, warrior* w) {
-    (m->alive_count)--;
-
     warrior* prev = w->prev;
     warrior* next = w->next;
     prev->next = next;
     next->prev = prev;
 
+    // the removed warrior cannot be the next to run!
     if(m->next_warrior == w) {
-      m->next_warrior = w->next;
+        // corner case: w is the only warrior in the mars
+        if(m->alive_count == 1) {
+            m->next_warrior = NULL;
+        } else {
+            m->next_warrior = w->next;
+        }
     }
+
+    (m->alive_count)--;
 }
 
 /* Creates a new warrior in the given mars, starting with the code of the given
