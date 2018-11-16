@@ -27,20 +27,6 @@
 #include "mars.h"
 #include "utils.h"
 
-<<<<<<< HEAD
-=======
-/* Returns a random unsigned integer from /dev/urandom. */
-unsigned int randuint(void) {
-    unsigned int val;
-
-    FILE* f = fopen("/dev/urandom", "r");
-    fread(&val, sizeof(val), 1, f);
-    fclose(f);
-
-    return val;
-}
-
->>>>>>> 266ee73e54fab27543aefc72de8640fd75f4ad3b
 /* Prints the hex values stored in each memory location of the mars in the given
  * block of core memory to stdout. */
 void print_block(mars* m, int index) {
@@ -55,7 +41,6 @@ void print_block(mars* m, int index) {
     }
 }
 
-<<<<<<< HEAD
 /* Deallocates dynamically allocated memory held by the given mars to prevent
  * memory leaks. This function must be called before a mars falls out of
  * scope or is freed.
@@ -130,7 +115,9 @@ void remove_warrior(mars* m, warrior* w) {
 
     if(m->next_warrior == w) {
       m->next_warrior = w->next;
-=======
+    }
+}
+
 /* Creates an instruction struct and populates its fields with information
  * encoded in the given opcode. */
 instruction get_instruction(opcode op) {
@@ -145,57 +132,6 @@ instruction get_instruction(opcode op) {
     return instr;
 }
 
-/* Chooses a random, unoccupied block into which to load a program, marks
- * it as occupied, and returns its number. If the core is full, it will
- * return -1. Note that this function will likely run slowly when a large
- * fraction of blocks are occupied. */
-int get_block(mars* m) {
-    // if core is full, return -1
-    bool full = true;
-
-    for(int i=0; i<MEMORY_BLOCKS; i++) {
-      if(!m->blocks[i]) {
-        full = false;
-        break;
-      }
-    }
-
-    if(full) {
-      return -1;
-    }
-
-    // pick a random free block
-    int block;
-
-    do {
-        block = randuint() % MEMORY_BLOCKS;
-    } while(m->blocks[block]);
-
-    m->blocks[block] = true;
-
-    return block;
-}
-
-/* Returns a random offset within a block such that the program fits between
- * block_base + offset and block_base + block_size. */
-unsigned int get_offset(program* prog) {
-    return randuint() % (unsigned int)(MAX_PROGRAM_SIZE - prog->size + 1);
-}
-
-/* Loads the given program into the given block of core memory of the given
- * mars. Memory is divided into blocks of MAX_PROGRAM_SIZE, and programs are
- * loaded into a random memory block at a random offset between 0 (inclusive)
- * and MAX_PROGRAM_SIZE - prog->size (inclusive). */
-void load_program(mars* m, program* prog, int block, int offset) {
-    int base_index = block * MAX_PROGRAM_SIZE + offset;
-
-    for(int i=0; i<prog->size; i++) {
-        m->core[base_index+i] = prog->code[i];
->>>>>>> 266ee73e54fab27543aefc72de8640fd75f4ad3b
-    }
-}
-
-<<<<<<< HEAD
 /* Creates a new warrior in the given mars, starting with the code of the given
  * program. Note that the given block must be free--this method does not check
  * whether it is free, and will overwrite another program that is loaded there.
@@ -217,13 +153,6 @@ warrior load_program(mars* m, program* prog, unsigned int block, unsigned int of
     strncpy((char*) base_addr, (char*) prog->code, (prog->size)*sizeof(opcode));
 
     return w;
-=======
-    prog->PC = base_index;
-
-    m->programs[m->program_count] = prog;
-    (m->program_count)++;
-    (m->alive)++;
->>>>>>> 266ee73e54fab27543aefc72de8640fd75f4ad3b
 }
 
 /* Chooses a random, unoccupied block into which to load a program, marks
