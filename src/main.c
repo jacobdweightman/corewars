@@ -1,3 +1,5 @@
+#define TEST_BUILD // include test functions
+
 #include <stdio.h>
 #include "mars.h"
 

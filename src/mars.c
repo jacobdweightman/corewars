@@ -118,20 +118,6 @@ void remove_warrior(mars* m, warrior* w) {
     }
 }
 
-/* Creates an instruction struct and populates its fields with information
- * encoded in the given opcode. */
-instruction get_instruction(opcode op) {
-    instruction instr;
-
-    instr.type = (op & OP_TYPE_MASK) >> TYPE_OFFSET;
-    instr.a_mode = (op & A_MODE_MASK) >> A_MODE_OFFSET;
-    instr.b_mode = (op & B_MODE_MASK) >> B_MODE_OFFSET;
-    instr.a = (op & A_MASK) >> A_OFFSET;
-    instr.b = (op & B_MASK) >> B_OFFSET;
-
-    return instr;
-}
-
 /* Creates a new warrior in the given mars, starting with the code of the given
  * program. Note that the given block must be free--this method does not check
  * whether it is free, and will overwrite another program that is loaded there.
@@ -301,8 +287,9 @@ void tick(mars* m) {
     m->next_warrior = m->next_warrior->next;
 }
 
-/* Carries out gameplay on the given mars until the game duration is met or no
- * all programs have terminated. Returns the player_id of the winning program.
+/* Carries out gameplay on the given mars until the game duration is met or only
+ * one program is still running. Returns the player_id of the winning program,
+ * or -1 if there is a draw.
  */
 int play(mars* m) {
     while(m->elapsed < m->duration && m->alive_count > 0) {

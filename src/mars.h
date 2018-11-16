@@ -46,10 +46,20 @@ typedef struct mars {
 void destroy_mars(mars* m);
 mars create_mars(unsigned int core_size, unsigned int block_size, unsigned int duration);
 warrior load_program(mars* m, program* prog, unsigned int block, unsigned int offset);
+unsigned int get_block(mars* m);
+unsigned int get_offset(mars* m, program* prog);
 void tick(mars* m);
 int play(mars* m);
 
+// DEBUG FUNCTIONS
 void print_block(mars* m, int index);
+
+#ifdef TEST_BUILD
+void insert_warrior(mars* m, warrior* w);
+void remove_warrior(mars* m, warrior* w);
+int get_operand_value(mars* m, int index, unsigned int mode, unsigned int raw_value);
+int get_operand_address(mars* m, int index, unsigned int mode, unsigned int raw_value);
+#endif
 
 /* Converts an unsigned 12-bit value into a signed int. */
 static inline int get_signed_operand_value(unsigned int raw_value) {

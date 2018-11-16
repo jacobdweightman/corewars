@@ -18,6 +18,8 @@
  * Author: Jacob Weightman <jacobdweightman@gmail.com>
  */
 
+#define TEST_BUILD
+
 #include <string.h>
 
 #include "../lib/unity/unity.h"

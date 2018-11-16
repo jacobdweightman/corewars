@@ -18,6 +18,8 @@
  * Author: Jacob Weightman <jacobdweightman@gmail.com>
  */
 
+#define TEST_BUILD
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
