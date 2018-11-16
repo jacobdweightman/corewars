@@ -177,7 +177,7 @@ unsigned int get_block(mars* m) {
     unsigned int block;
 
     do {
-        block = randuint() % (m->core_size / m->block_size);
+        block = randuint() % (m->core_size / m->block_size + 1);
     } while(m->blocks[block]);
 
     m->blocks[block] = true;
@@ -196,7 +196,13 @@ unsigned int get_offset(mars* m, program* prog) {
 
 /* Returns as a signed int the value of an operand from an instruction at the
  * given address, with the given addressing mode, and with the given value.
- * This function assumes the given value occupies only its rightmost 12 bits. */
+ * This function assumes the given value occupies only its rightmost 12 bits.
+ * If this operand is invalid, INT_MAX is returned instead.
+ *
+ * @param m - the mars which should be referenced for relative/indirect modes
+ * @param index - the location of the instruction, so offsets may be calculated
+ * @param mode - the addressing mode of the operand
+ * @param raw_value - the right-aligned 12-bit value encoding the value */
 int get_operand_value(mars* m, int index, unsigned int mode,
                       unsigned int raw_value) {
     int value = get_signed_operand_value(raw_value);
@@ -205,15 +211,16 @@ int get_operand_value(mars* m, int index, unsigned int mode,
         case IMMEDIATE_MODE:
             return value;
         case RELATIVE_MODE:
-            raw_value = m->core[(index+value) % (int) m->core_size];
-            return get_signed_operand_value(raw_value);
+            raw_value = m->core[wrap_index(index+value, m->core_size)];
+            return (int) raw_value;
         case INDIRECT_MODE:
-            raw_value = m->core[(index+value) % (int) m->core_size];
-            raw_value = m->core[raw_value % m->core_size];
-            return get_signed_operand_value(raw_value);
+            raw_value = m->core[wrap_index(index+value, m->core_size)];
+            value = (int) raw_value;
+            raw_value = m->core[wrap_index(index+value, m->core_size)];
+            return (int) raw_value;
         default:
             printf("died: invalid addressing mode\n");
-            return 0xFFFF;
+            return INT_MAX;
     }
 }
 

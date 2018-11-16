@@ -75,4 +75,12 @@ static inline int get_signed_operand_value(unsigned int raw_value) {
     }
 }
 
+static inline int wrap_index(int index, unsigned int size) {
+    if(index < 0) {
+        return (int) size + index % (int) size;
+    } else {
+        return index % (int) size;
+    }
+}
+
 #endif
