@@ -237,6 +237,82 @@ void test_get_operand_address(void) {
     TEST_ASSERT_EQUAL(7, get_operand_address(&m, 3, INDIRECT_MODE, 0x0FFC));
 }
 
+void test_mov_relative_relative(void) {
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    // no address wrapping
+    m.core[0] = 0x15004002;
+    m.core[1] = 1;
+    m.core[2] = 2;
+    m.core[3] = 3;
+    m.core[4] = 4;
+
+    w.PC = 0;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x15004002, m.core[0]);
+    TEST_ASSERT_EQUAL(1, m.core[1]);
+    TEST_ASSERT_EQUAL(4, m.core[2]);
+    TEST_ASSERT_EQUAL(3, m.core[3]);
+    TEST_ASSERT_EQUAL(4, m.core[4]);
+
+    // with address wrapping
+    m.core[0] = 0;
+    m.core[1] = 0x1500AFFF;
+    m.core[2] = 2;
+    m.core[3] = 3;
+    m.core[4] = 4;
+
+    w.PC = 1;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x1500AFFF, m.core[0]);
+    TEST_ASSERT_EQUAL(0x1500AFFF, m.core[1]);
+    TEST_ASSERT_EQUAL(2, m.core[2]);
+    TEST_ASSERT_EQUAL(3, m.core[3]);
+    TEST_ASSERT_EQUAL(4, m.core[4]);
+}
+
+void test_mov_indirect_relative(void) {
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    // no address wrapping
+    m.core[0] = 0;
+    m.core[1] = 1;
+    m.core[2] = 0x19FFF002;
+    m.core[3] = 3;
+    m.core[4] = 4;
+
+    w.PC = 2;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0, m.core[0]);
+    TEST_ASSERT_EQUAL(1, m.core[1]);
+    TEST_ASSERT_EQUAL(0x19FFF002, m.core[2]);
+    TEST_ASSERT_EQUAL(3, m.core[3]);
+    TEST_ASSERT_EQUAL(3, m.core[4]);
+
+    // with address wrapping
+    m.core[0] = 0;
+    m.core[1] = 1;
+    m.core[2] = 0x1900C006;
+    m.core[3] = 3;
+    m.core[4] = 4;
+
+    w.PC = 2;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0, m.core[0]);
+    TEST_ASSERT_EQUAL(1, m.core[1]);
+    TEST_ASSERT_EQUAL(0x1900C006, m.core[2]);
+    TEST_ASSERT_EQUAL(1, m.core[3]);
+    TEST_ASSERT_EQUAL(4, m.core[4]);
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_create_mars_1);
@@ -249,6 +325,8 @@ int main() {
     RUN_TEST(test_load_program);
     RUN_TEST(test_get_operand_value);
     RUN_TEST(test_get_operand_address);
+    RUN_TEST(test_mov_relative_relative);
+    RUN_TEST(test_mov_indirect_relative);
     UNITY_END();
 
     return 0;
