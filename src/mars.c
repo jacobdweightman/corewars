@@ -144,8 +144,12 @@ warrior load_program(mars* m, program* prog, unsigned int block, unsigned int of
     insert_warrior(m, &w);
 
     // load program into mars memory
-    opcode* base_addr = m->core + m->block_size * block + offset;
-    strncpy((char*) base_addr, (char*) prog->code, (prog->size)*sizeof(opcode));
+    unsigned int base = m->block_size * block + offset;
+    w.PC = base;
+
+    for(unsigned int i=0; i<prog->size; i++) {
+        m->core[base+i] = prog->code[i];
+    }
 
     return w;
 }
@@ -302,6 +306,7 @@ void tick(mars* m) {
 
     prog->PC = (prog->PC + 1) % m->core_size;
     m->next_warrior = m->next_warrior->next;
+    m->elapsed++;
 }
 
 /* Carries out gameplay on the given mars until the game duration is met or only

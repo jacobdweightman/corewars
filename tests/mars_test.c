@@ -170,6 +170,14 @@ void test_load_program(void) {
     load_program(&m, &prog, 0, 0);
     load_program(&m, &prog, 1, 2);
 
+    warrior* w = m.next_warrior;
+    TEST_ASSERT_EQUAL(5, w->id);
+    TEST_ASSERT_EQUAL(7, w->PC);
+    w = w->next;
+    TEST_ASSERT_EQUAL(5, w->id);
+    TEST_ASSERT_EQUAL(0, w->PC);
+
+
     TEST_ASSERT_EQUAL(0x0c0d0e0f, m.core[0]);
     TEST_ASSERT_EQUAL(0x08090a0b, m.core[1]);
     TEST_ASSERT_EQUAL(0x04050607, m.core[2]);
