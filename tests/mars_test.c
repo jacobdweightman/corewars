@@ -195,7 +195,6 @@ void test_get_operand_value(void) {
     m.core[8] = 3;
     m.core[9] = 4;
 
-    //int get_operand_value(mars* m, int index, unsigned int mode, unsigned int raw_value)
     TEST_ASSERT_EQUAL(5, get_operand_value(&m, 5, IMMEDIATE_MODE, 0x0005));
     TEST_ASSERT_EQUAL(260, get_operand_value(&m, 2, IMMEDIATE_MODE, 0x0104));
     TEST_ASSERT_EQUAL(-1, get_operand_value(&m, 9, IMMEDIATE_MODE, 0x0FFF));
@@ -204,12 +203,38 @@ void test_get_operand_value(void) {
     TEST_ASSERT_EQUAL(0, get_operand_value(&m, 3, RELATIVE_MODE, 0x0002));
     TEST_ASSERT_EQUAL(-1, get_operand_value(&m, 7, RELATIVE_MODE, 0x0FFD));
     TEST_ASSERT_EQUAL(-4, get_operand_value(&m, 8, RELATIVE_MODE, 0x0003)); // roll over top
-    TEST_ASSERT_EQUAL(3, get_operand_value(&m, 2, RELATIVE_MODE, 0x0FFC)); // roll under bottom -4
+    TEST_ASSERT_EQUAL(3, get_operand_value(&m, 2, RELATIVE_MODE, 0x0FFC)); // roll under bottom
 
     TEST_ASSERT_EQUAL(0, get_operand_value(&m, 4, INDIRECT_MODE, 0x0002));
     TEST_ASSERT_EQUAL(-5, get_operand_value(&m, 6, INDIRECT_MODE, 0x03));
-    TEST_ASSERT_EQUAL(-4, get_operand_value(&m, 9, INDIRECT_MODE, 0x0FFE));
-    TEST_ASSERT_EQUAL(1, get_operand_value(&m, 1, INDIRECT_MODE, 0x0FFF));
+    TEST_ASSERT_EQUAL(-4, get_operand_value(&m, 9, INDIRECT_MODE, 0x0FFE)); // roll over top
+    TEST_ASSERT_EQUAL(1, get_operand_value(&m, 1, INDIRECT_MODE, 0x0FFF)); // roll under bottom
+}
+
+void test_get_operand_address(void) {
+    mars m = create_mars(10, 5, 100);
+    m.core[0] = (opcode) -5;
+    m.core[1] = (opcode) -4;
+    m.core[2] = (opcode) -3;
+    m.core[3] = (opcode) -2;
+    m.core[4] = (opcode) -1;
+    m.core[5] = 0;
+    m.core[6] = 1;
+    m.core[7] = 2;
+    m.core[8] = 3;
+    m.core[9] = 4;
+
+    TEST_ASSERT_EQUAL(8, get_operand_address(&m, 6, RELATIVE_MODE, 0x0002));
+    TEST_ASSERT_EQUAL(1, get_operand_address(&m, 4, RELATIVE_MODE, 0x0FFD));
+    TEST_ASSERT_EQUAL(0, get_operand_address(&m, 9, RELATIVE_MODE, 0x0001));
+    TEST_ASSERT_EQUAL(9, get_operand_address(&m, 8, RELATIVE_MODE, 0x0001));
+    TEST_ASSERT_EQUAL(8, get_operand_address(&m, 2, RELATIVE_MODE, 0x0FFC));
+
+    TEST_ASSERT_EQUAL(9, get_operand_address(&m, 6, INDIRECT_MODE, 0x0002));
+    TEST_ASSERT_EQUAL(0, get_operand_address(&m, 4, INDIRECT_MODE, 0x0FFD));
+    TEST_ASSERT_EQUAL(4, get_operand_address(&m, 9, INDIRECT_MODE, 0x0001));
+    TEST_ASSERT_EQUAL(2, get_operand_address(&m, 8, INDIRECT_MODE, 0x0001));
+    TEST_ASSERT_EQUAL(7, get_operand_address(&m, 3, INDIRECT_MODE, 0x0FFC));
 }
 
 int main() {
@@ -223,6 +248,7 @@ int main() {
     RUN_TEST(test_remove_warrior_only);
     RUN_TEST(test_load_program);
     RUN_TEST(test_get_operand_value);
+    RUN_TEST(test_get_operand_address);
     UNITY_END();
 
     return 0;

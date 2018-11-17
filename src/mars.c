@@ -226,7 +226,7 @@ int get_operand_value(mars* m, int index, unsigned int mode,
 
 /* Compute the address refered to by an operand in the designated addressing
  * mode. This address is an index into the mars core. If the mode does not give
- * a valid address, -1 will be returned.
+ * a valid address, INT_MAX will be returned.
  *
  * @param m - the mars whose memory will be referenced
  * @param index - the address of the executing instruction
@@ -236,15 +236,16 @@ int get_operand_value(mars* m, int index, unsigned int mode,
 int get_operand_address(mars* m, int index, unsigned int mode,
                         unsigned int raw_value) {
     int value = get_signed_operand_value(raw_value);
-    int addr = (index + value) % (int) m->core_size;
+    int addr = wrap_index(index + value, m->core_size);
 
     switch (mode) {
         case RELATIVE_MODE:
             return addr;
         case INDIRECT_MODE:
-            return (index + (int)m->core[addr]) % (int) m->core_size;
+            value = (int) m->core[addr];
+            return wrap_index(index + value, m->core_size);
         default:
-            return -1;
+            return INT_MAX;
     }
 }
 
