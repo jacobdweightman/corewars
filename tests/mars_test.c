@@ -251,11 +251,11 @@ void test_mov_relative_relative(void) {
     insert_warrior(&m, &w);
 
     // no address wrapping
-    m.core[0] = 0x15004002;
-    m.core[1] = 1;
-    m.core[2] = 2;
-    m.core[3] = 3;
-    m.core[4] = 4;
+    m.core[0] = 0x15004002; // MOV 4 2
+    m.core[1] = 0x00000001; // DAT 1
+    m.core[2] = 0x00000002; // DAT 2
+    m.core[3] = 0x00000003; // DAT 3
+    m.core[4] = 0x00000004; // DAT 4
 
     w.PC = 0;
     tick(&m);
@@ -267,11 +267,11 @@ void test_mov_relative_relative(void) {
     TEST_ASSERT_EQUAL(4, m.core[4]);
 
     // with address wrapping
-    m.core[0] = 0;
-    m.core[1] = 0x1500AFFF;
-    m.core[2] = 2;
-    m.core[3] = 3;
-    m.core[4] = 4;
+    m.core[0] = 0x00000000; // DAT 0
+    m.core[1] = 0x1500AFFF; // MOV 10 -1
+    m.core[2] = 0x00000002; // DAT 2
+    m.core[3] = 0x00000003; // DAT 3
+    m.core[4] = 0x00000004; // DAT 4
 
     w.PC = 1;
     tick(&m);
@@ -289,11 +289,11 @@ void test_mov_indirect_relative(void) {
     insert_warrior(&m, &w);
 
     // no address wrapping
-    m.core[0] = 0;
-    m.core[1] = 1;
-    m.core[2] = 0x19FFF002;
-    m.core[3] = 3;
-    m.core[4] = 4;
+    m.core[0] = 0x00000000; // DAT 0
+    m.core[1] = 0x00000001; // DAT 1
+    m.core[2] = 0x19FFF002; // MOV @-1 2
+    m.core[3] = 0x00000003; // DAT 3
+    m.core[4] = 0x00000004; // DAT 4
 
     w.PC = 2;
     tick(&m);
@@ -305,11 +305,11 @@ void test_mov_indirect_relative(void) {
     TEST_ASSERT_EQUAL(3, m.core[4]);
 
     // with address wrapping
-    m.core[0] = 0;
-    m.core[1] = 1;
-    m.core[2] = 0x1900C006;
-    m.core[3] = 3;
-    m.core[4] = 4;
+    m.core[0] = 0x00000000; // DAT 0
+    m.core[1] = 0x00000001; // DAT 1
+    m.core[2] = 0x1900C006; // MOV @12 6
+    m.core[3] = 0x00000003; // DAT 3
+    m.core[4] = 0x00000004; // DAT 4
 
     w.PC = 2;
     tick(&m);
@@ -319,6 +319,44 @@ void test_mov_indirect_relative(void) {
     TEST_ASSERT_EQUAL(0x1900C006, m.core[2]);
     TEST_ASSERT_EQUAL(1, m.core[3]);
     TEST_ASSERT_EQUAL(4, m.core[4]);
+}
+
+void test_mov_relative_indirect(void) {
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    // no address wrapping
+    m.core[0] = 0x00000002; // DAT 0
+    m.core[1] = 0x00000001; // DAT 1
+    m.core[2] = 0x16001FFE; // MOV 1 @-2 (3, #-1 --> @-2, 2, #4)
+    m.core[3] = 0xFFFFFFFF; // DAT -1
+    m.core[4] = 0x00000004; // DAT 4
+
+    w.PC = 2;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+    TEST_ASSERT_EQUAL(0x00000001, m.core[1]);
+    TEST_ASSERT_EQUAL(0x16001FFE, m.core[2]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFF, m.core[3]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFF, m.core[4]); // should be -1
+
+    // with address wrapping
+    m.core[0] = 0;          // DAT 0
+    m.core[1] = 1;          // DAT 1
+    m.core[2] = 3;          // DAT -1
+    m.core[3] = 0x16008FFC; // MOV 8 @-4
+    m.core[4] = 4;          // DAT 4
+
+    w.PC = 3;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x00000000, m.core[0]);
+    TEST_ASSERT_EQUAL(0x00000001, m.core[1]);
+    TEST_ASSERT_EQUAL(0x00000001, m.core[2]);
+    TEST_ASSERT_EQUAL(0x16008FFC, m.core[3]);
+    TEST_ASSERT_EQUAL(0x00000004, m.core[4]);
 }
 
 int main() {
@@ -335,6 +373,7 @@ int main() {
     RUN_TEST(test_get_operand_address);
     RUN_TEST(test_mov_relative_relative);
     RUN_TEST(test_mov_indirect_relative);
+    RUN_TEST(test_mov_relative_indirect);
     UNITY_END();
 
     return 0;
