@@ -37,6 +37,8 @@ void test_prog_from_buffer(void) {
     TEST_ASSERT_EQUAL(prog.id, 5);
     TEST_ASSERT_EQUAL(prog.size, 3);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(buf, prog.code, 3);
+
+    destroy_program(&prog);
 }
 
 void test_prog_from_buffer_with_null(void) {
@@ -49,6 +51,8 @@ void test_prog_from_buffer_with_null(void) {
     TEST_ASSERT_EQUAL(prog.id, 2);
     TEST_ASSERT_EQUAL(prog.size, 4);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(buf, prog.code, 4);
+
+    destroy_program(&prog);
 }
 
 void test_prog_from_file_nop(void) {
@@ -68,6 +72,8 @@ void test_prog_from_file_nop(void) {
     TEST_ASSERT_EQUAL(prog.id, 3);
     TEST_ASSERT_EQUAL(prog.size, 1);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(expected, prog.code, 1);
+
+    destroy_program(&prog);
 }
 
 void test_prog_from_file_imp(void) {
@@ -87,6 +93,8 @@ void test_prog_from_file_imp(void) {
     TEST_ASSERT_EQUAL(prog.id, 7);
     TEST_ASSERT_EQUAL(prog.size, 1);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(expected, prog.code, 1);
+
+    destroy_program(&prog);
 }
 
 void test_prog_from_file_dwarf(void) {
@@ -109,6 +117,8 @@ void test_prog_from_file_dwarf(void) {
     TEST_ASSERT_EQUAL(prog.id, 10);
     TEST_ASSERT_EQUAL(prog.size, 4);
     TEST_ASSERT_EQUAL_OPCODE_ARRAY(expected, prog.code, 4);
+
+    destroy_program(&prog);
 }
 
 int main() {

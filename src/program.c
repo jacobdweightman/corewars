@@ -51,9 +51,9 @@ void destroy_program(program* prog) {
     free(prog->code);
 }
 
-/* Reads a program from the given opcode buffer. Since a valid program may
- * contain null bytes, the size of the program must be included so that it can
- * be properly read. Note that an improper size may result in buffer
+/* Reads a program with code copied from the given opcode buffer. Since a valid
+ * program may contain null bytes, the size of the program must be included so
+ * that it can be properly read. Note that an improper size may result in buffer
  * overflow when the program is loaded into a mars instance.
  *
  * @param id - an identification number of the player that owns this program
@@ -61,8 +61,14 @@ void destroy_program(program* prog) {
  * @param size - the size of the program, in number of opcodes
  * @return a program */
 program prog_from_buffer(unsigned int id, opcode* buf, unsigned long size) {
+    opcode* code_copy = malloc(size * sizeof(opcode));
+
+    for(unsigned int i=0; i<size; i++) {
+      code_copy[i] = buf[i];
+    }
+
     program prog;
-    prog.code = buf;
+    prog.code = code_copy;
     prog.size = size;
     prog.id = id;
 

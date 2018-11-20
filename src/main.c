@@ -34,5 +34,8 @@ int main(int argc, char* argv[]) {
     print_block(&m, 0);
     print_block(&m, 1);
 
+    destroy_program(&p);
+    destroy_mars(&m);
+
     return 0;
 }

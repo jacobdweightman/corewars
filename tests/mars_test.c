@@ -43,6 +43,8 @@ void test_create_mars_1(void) {
     for(unsigned int i=0; i<4; i++) {
         TEST_ASSERT_FALSE(m.blocks[i]);
     }
+
+    destroy_mars(&m);
 }
 
 void test_create_mars_2(void) {
@@ -61,6 +63,8 @@ void test_create_mars_2(void) {
     for(unsigned int i=0; i<4; i++) { // last, partial block doesn't count!
         TEST_ASSERT_FALSE(m.blocks[i]);
     }
+
+    destroy_mars(&m);
 }
 
 void test_insert_warrior_empty(void) {
@@ -188,6 +192,9 @@ void test_load_program(void) {
     TEST_ASSERT_EQUAL(0x0c0d0e0f, m.core[7]);
     TEST_ASSERT_EQUAL(0x08090a0b, m.core[8]);
     TEST_ASSERT_EQUAL(0x04050607, m.core[9]);
+
+    destroy_program(&prog);
+    destroy_mars(&m);
 }
 
 void test_get_operand_value(void) {
@@ -217,6 +224,8 @@ void test_get_operand_value(void) {
     TEST_ASSERT_EQUAL(-5, get_operand_value(&m, 6, INDIRECT_MODE, 0x03));
     TEST_ASSERT_EQUAL(-4, get_operand_value(&m, 9, INDIRECT_MODE, 0x0FFE)); // roll over top
     TEST_ASSERT_EQUAL(1, get_operand_value(&m, 1, INDIRECT_MODE, 0x0FFF)); // roll under bottom
+
+    destroy_mars(&m);
 }
 
 void test_get_operand_address(void) {
@@ -243,6 +252,8 @@ void test_get_operand_address(void) {
     TEST_ASSERT_EQUAL(4, get_operand_address(&m, 9, INDIRECT_MODE, 0x0001));
     TEST_ASSERT_EQUAL(2, get_operand_address(&m, 8, INDIRECT_MODE, 0x0001));
     TEST_ASSERT_EQUAL(7, get_operand_address(&m, 3, INDIRECT_MODE, 0x0FFC));
+
+    destroy_mars(&m);
 }
 
 void test_mov_relative_relative(void) {
@@ -281,6 +292,8 @@ void test_mov_relative_relative(void) {
     TEST_ASSERT_EQUAL(2, m.core[2]);
     TEST_ASSERT_EQUAL(3, m.core[3]);
     TEST_ASSERT_EQUAL(4, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_mov_indirect_relative(void) {
@@ -319,6 +332,8 @@ void test_mov_indirect_relative(void) {
     TEST_ASSERT_EQUAL(0x1900C006, m.core[2]);
     TEST_ASSERT_EQUAL(1, m.core[3]);
     TEST_ASSERT_EQUAL(4, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_mov_relative_indirect(void) {
@@ -357,6 +372,8 @@ void test_mov_relative_indirect(void) {
     TEST_ASSERT_EQUAL(0x00000001, m.core[2]);
     TEST_ASSERT_EQUAL(0x16008FFC, m.core[3]);
     TEST_ASSERT_EQUAL(0x00000004, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_mov_indirect_indirect(void) {
@@ -395,6 +412,8 @@ void test_mov_indirect_indirect(void) {
     TEST_ASSERT_EQUAL(0x1AFFFFFE, m.core[2]);
     TEST_ASSERT_EQUAL(0x1A003FF7, m.core[3]);
     TEST_ASSERT_EQUAL(0x00000003, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 int main() {
