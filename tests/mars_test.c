@@ -275,16 +275,16 @@ void test_mov_relative_relative(void) {
     m.core[1] = 0x00000001; // DAT 1
     m.core[2] = 0x00000002; // DAT 2
     m.core[3] = 0x00000003; // DAT 3
-    m.core[4] = 0x00000004; // DAT 4
+    m.core[4] = 0x12345678; // DAT 4
 
     w.PC = 0;
     tick(&m);
 
     TEST_ASSERT_EQUAL(0x15004002, m.core[0]);
-    TEST_ASSERT_EQUAL(1, m.core[1]);
-    TEST_ASSERT_EQUAL(4, m.core[2]);
-    TEST_ASSERT_EQUAL(3, m.core[3]);
-    TEST_ASSERT_EQUAL(4, m.core[4]);
+    TEST_ASSERT_EQUAL(0x00000001, m.core[1]);
+    TEST_ASSERT_EQUAL(0x12345678, m.core[2]);
+    TEST_ASSERT_EQUAL(0x00000003, m.core[3]);
+    TEST_ASSERT_EQUAL(0x12345678, m.core[4]);
 
     // with address wrapping
     m.core[0] = 0x00000000; // DAT 0
@@ -427,11 +427,83 @@ void test_mov_indirect_indirect(void) {
 
 // TESTS FOR ADD
 void test_add_immediate_indirect(void) {
-    TEST_IGNORE();
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    // no address wrapping
+    m.core[0] = 0xFEDCBA98; // DAT -19088744
+    m.core[1] = 0x00000104; // DAT 260
+    m.core[2] = 0x220FF001; // ADD #255 @1
+    m.core[3] = 0xFFFFFFFF; // DAT -1
+    m.core[4] = 0x00000104; // DAT 260
+
+    w.PC = 2;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0xFEDCBA98, m.core[0]);
+    TEST_ASSERT_EQUAL(0x00000203, m.core[1]);
+    TEST_ASSERT_EQUAL(0x220FF001, m.core[2]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFF, m.core[3]);
+    TEST_ASSERT_EQUAL(0x00000104, m.core[4]);
+
+    // with address wrapping
+    m.core[0] = 0xFEDCBA98; // DAT -19088744
+    m.core[1] = 0x00000001; // DAT 1
+    m.core[2] = 0x220FF001; // ADD #255 @1
+    m.core[3] = 0x22004FFC; // ADD #4 @-4
+    m.core[4] = 0x0000000A; // DAT 10
+
+    w.PC = 3;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0xFEDCBA98, m.core[0]);
+    TEST_ASSERT_EQUAL(0x00000001, m.core[1]);
+    TEST_ASSERT_EQUAL(0x220FF001, m.core[2]);
+    TEST_ASSERT_EQUAL(0x22005000, m.core[3]);
+    TEST_ASSERT_EQUAL(0x0000000A, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_add_immediate_relative(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  // no address wrapping
+  m.core[0] = 0x10001000; // DAT 268435456
+  m.core[1] = 0x00000104; // DAT 260
+  m.core[2] = 0x220FF001; // ADD #255 @1
+  m.core[3] = 0xFFFFFFFD; // DAT -3
+  m.core[4] = 0x21FF0FFC; // ADD #-16 -4
+
+  w.PC = 4;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x10000FF0, m.core[0]);
+  TEST_ASSERT_EQUAL(0x00000104, m.core[1]);
+  TEST_ASSERT_EQUAL(0x220FF001, m.core[2]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFD, m.core[3]);
+  TEST_ASSERT_EQUAL(0x21FF0FFC, m.core[4]);
+
+  // with address wrapping
+  m.core[0] = 0x2100AFEF; // ADD #10 -17
+  m.core[1] = 0x00000104; // DAT 260
+  m.core[2] = 0x220FF001; // ADD #255 @1
+  m.core[3] = 0xFFFFFFFD; // DAT -3
+  m.core[4] = 0x21FF0FFC; // ADD #-16 -4
+
+  w.PC = 0;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x2100AFEF, m.core[0]);
+  TEST_ASSERT_EQUAL(0x00000104, m.core[1]);
+  TEST_ASSERT_EQUAL(0x220FF001, m.core[2]);
+  TEST_ASSERT_EQUAL(0x00000007, m.core[3]);
+  TEST_ASSERT_EQUAL(0x21FF0FFC, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 void test_add_relative_relative(void) {

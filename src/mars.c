@@ -259,7 +259,7 @@ void tick(mars* m) {
 
     int addr = (int) prog->PC;
     instruction instr = decode(m->core[addr]);
-    printf("addr: %d, value: %x\n", addr, m->core[addr]);
+    //printf("addr: %d, value: %x\n", addr, m->core[addr]);
 
     int a = get_operand_value(m, addr, instr.a_mode, instr.a);
     int b = get_operand_value(m, addr, instr.b_mode, instr.b);
@@ -267,28 +267,30 @@ void tick(mars* m) {
 
     switch (instr.type) {
         case MOV_TYPE:
-            printf("MOV\n");
+            //printf("MOV\n");
             m->core[b_addr] = (opcode) a;
             break;
         case ADD_TYPE:
-            printf("ADD\n");
-            m->core[b_addr] = (opcode) ((int) m->core[b_addr] + a); // TODO: do this better
+            //printf("ADD\n");
+            // Do normal unsigned int addition. No wrap on operand boundaries.
+            m->core[b_addr] = (opcode) ((int) m->core[b_addr] + a);
             break;
         case SUB_TYPE:
-            printf("SUB\n");
-            m->core[b_addr] = (opcode) ((int) m->core[b_addr] - a); // TODO: do this better
+            //printf("SUB\n");
+            // Do normal unsigned int addition. No wrap on operand boundaries.
+            m->core[b_addr] = (opcode) ((int) m->core[b_addr] - a);
             break;
         case JMP_TYPE:
-            printf("JMP\n");
+            //printf("JMP\n");
             prog->PC = (unsigned int) (b_addr - 1) % m->core_size;
             break;
         case JMZ_TYPE:
-            printf("JMZ\n");
+            //printf("JMZ\n");
             if(a == 0)
                 prog->PC = (unsigned int) (b_addr - 1) % m->core_size;
             break;
         case DJZ_TYPE:
-            printf("DJZ\n");
+            //printf("DJZ\n");
             if(--a == 0)
                 prog->PC = (unsigned int) (b_addr - 1) % m->core_size;
             break;
