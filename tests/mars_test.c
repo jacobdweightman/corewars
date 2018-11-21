@@ -256,6 +256,15 @@ void test_get_operand_address(void) {
     destroy_mars(&m);
 }
 
+// TESTS FOR MOV
+void test_mov_immediate_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_mov_immediate_indirect(void) {
+    TEST_IGNORE();
+}
+
 void test_mov_relative_relative(void) {
     mars m = create_mars(5, 5, 100);
     warrior w;
@@ -416,6 +425,145 @@ void test_mov_indirect_indirect(void) {
     destroy_mars(&m);
 }
 
+// TESTS FOR ADD
+void test_add_immediate_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_add_immediate_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_add_relative_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_add_indirect_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_add_relative_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_add_indirect_indirect(void) {
+    TEST_IGNORE();
+}
+
+// TESTS FOR SUB
+void test_sub_immediate_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_sub_immediate_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_sub_relative_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_sub_indirect_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_sub_relative_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_sub_indirect_indirect(void) {
+    TEST_IGNORE();
+}
+
+// TESTS FOR JMP
+void test_sub_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_sub_indirect(void) {
+    TEST_IGNORE();
+}
+
+// TESTS FOR JMZ
+void test_jmz_immediate_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_jmz_immediate_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_jmz_relative_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_jmz_indirect_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_jmz_relative_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_jmz_indirect_indirect(void) {
+    TEST_IGNORE();
+}
+
+// TESTS FOR DJZ
+void test_djz_relative_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_djz_indirect_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_djz_relative_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_djz_indirect_indirect(void) {
+    TEST_IGNORE();
+}
+
+// TESTS FOR CMP
+void test_cmp_immediate_immediate(void) {
+  TEST_IGNORE();
+}
+
+void test_cmp_immediate_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_cmp_immediate_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_cmp_relative_immediate(void) {
+  TEST_IGNORE();
+}
+
+void test_cmp_relative_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_cmp_relative_indirect(void) {
+    TEST_IGNORE();
+}
+
+void test_cmp_indirect_immediate(void) {
+    TEST_IGNORE();
+}
+
+void test_cmp_indirect_relative(void) {
+    TEST_IGNORE();
+}
+
+void test_cmp_indirect_indirect(void) {
+    TEST_IGNORE();
+}
+
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(test_create_mars_1);
@@ -428,10 +576,39 @@ int main() {
     RUN_TEST(test_load_program);
     RUN_TEST(test_get_operand_value);
     RUN_TEST(test_get_operand_address);
+    RUN_TEST(test_mov_immediate_relative);
+    RUN_TEST(test_mov_immediate_indirect);
     RUN_TEST(test_mov_relative_relative);
     RUN_TEST(test_mov_indirect_relative);
     RUN_TEST(test_mov_relative_indirect);
     RUN_TEST(test_mov_indirect_indirect);
+    RUN_TEST(test_add_immediate_relative);
+    RUN_TEST(test_add_immediate_indirect);
+    RUN_TEST(test_add_relative_relative);
+    RUN_TEST(test_add_indirect_relative);
+    RUN_TEST(test_add_relative_indirect);
+    RUN_TEST(test_add_indirect_indirect);
+    RUN_TEST(test_sub_relative);
+    RUN_TEST(test_sub_indirect);
+    RUN_TEST(test_jmz_immediate_relative);
+    RUN_TEST(test_jmz_immediate_indirect);
+    RUN_TEST(test_jmz_relative_relative);
+    RUN_TEST(test_jmz_indirect_relative);
+    RUN_TEST(test_jmz_relative_indirect);
+    RUN_TEST(test_jmz_indirect_indirect);
+    RUN_TEST(test_djz_relative_relative);
+    RUN_TEST(test_djz_indirect_relative);
+    RUN_TEST(test_djz_relative_indirect);
+    RUN_TEST(test_djz_indirect_indirect);
+    RUN_TEST(test_cmp_immediate_immediate);
+    RUN_TEST(test_cmp_immediate_relative);
+    RUN_TEST(test_cmp_immediate_indirect);
+    RUN_TEST(test_cmp_relative_immediate);
+    RUN_TEST(test_cmp_relative_relative);
+    RUN_TEST(test_cmp_relative_indirect);
+    RUN_TEST(test_cmp_indirect_immediate);
+    RUN_TEST(test_cmp_indirect_relative);
+    RUN_TEST(test_cmp_indirect_indirect);
     UNITY_END();
 
     return 0;
