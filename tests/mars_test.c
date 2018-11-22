@@ -507,11 +507,83 @@ void test_add_immediate_relative(void) {
 }
 
 void test_add_relative_relative(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  // no address wrapping
+  m.core[0] = 0x10001100; // DAT 268435456
+  m.core[1] = 0x00000104; // DAT 260
+  m.core[2] = 0x25FFEFFF; // ADD -2 -1
+  m.core[3] = 0xFFFFFFFD; // DAT -3
+  m.core[4] = 0x21FF0FFC; // ADD #-16 -4
+
+  w.PC = 2;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x10001100, m.core[0]);
+  TEST_ASSERT_EQUAL(0x10001204, m.core[1]);
+  TEST_ASSERT_EQUAL(0x25FFEFFF, m.core[2]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFD, m.core[3]);
+  TEST_ASSERT_EQUAL(0x21FF0FFC, m.core[4]);
+
+  // with address wrapping
+  m.core[0] = 0x25015010; // ADD 21 16
+  m.core[1] = 0x000A0104; // DAT 655620
+  m.core[2] = 0x220FF001; // ADD #255 @1
+  m.core[3] = 0xFFFFFFFD; // DAT -3
+  m.core[4] = 0x21FF0FFC; // ADD #-16 -4
+
+  w.PC = 0;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x25015010, m.core[0]);
+  TEST_ASSERT_EQUAL(0x00140208, m.core[1]);
+  TEST_ASSERT_EQUAL(0x220FF001, m.core[2]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFD, m.core[3]);
+  TEST_ASSERT_EQUAL(0x21FF0FFC, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 void test_add_indirect_relative(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  // no address wrapping
+  m.core[0] = 0x00000002; // DAT 1
+  m.core[1] = 0x29FFF001; // ADD @-1 1
+  m.core[2] = 0xFFFFFFFE; // DAT -2
+  m.core[3] = 0x00000002; // DAT
+  m.core[4] = 0x00000000; // DAT 0
+
+  w.PC = 1;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+  TEST_ASSERT_EQUAL(0x29FFF001, m.core[1]);
+  TEST_ASSERT_EQUAL(0x00000000, m.core[2]);
+  TEST_ASSERT_EQUAL(0x00000002, m.core[3]);
+  TEST_ASSERT_EQUAL(0x00000000, m.core[4]);
+
+  // with address wrapping
+  m.core[0] = 0x00000001; // DAT 1
+  m.core[1] = 0xFFFFFFFE; // DAT -2
+  m.core[2] = 0x00000002; // DAT 2
+  m.core[3] = 0x29FF0005; // ADD @-16 5
+  m.core[4] = 0x00000000; // DAT 0
+
+  w.PC = 3;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x00000001, m.core[0]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFE, m.core[1]);
+  TEST_ASSERT_EQUAL(0x00000002, m.core[2]);
+  TEST_ASSERT_EQUAL(0x29FF0006, m.core[3]);
+  TEST_ASSERT_EQUAL(0x00000000, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 void test_add_relative_indirect(void) {
