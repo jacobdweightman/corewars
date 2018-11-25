@@ -587,11 +587,49 @@ void test_add_indirect_relative(void) {
 }
 
 void test_add_relative_indirect(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  m.core[0] = 0x00000002; // DAT 1
+  m.core[1] = 0x26FFF006; // ADD -1 @6
+  m.core[2] = 0xFFFFFFFE; // DAT -2
+  m.core[3] = 0x00000002; // DAT 2
+  m.core[4] = 0x00000001; // DAT 1
+
+  w.PC = 1;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+  TEST_ASSERT_EQUAL(0x26FFF006, m.core[1]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFE, m.core[2]);
+  TEST_ASSERT_EQUAL(0x00000002, m.core[3]);
+  TEST_ASSERT_EQUAL(0x00000003, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 void test_add_indirect_indirect(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  m.core[0] = 0x00000002; // DAT 1
+  m.core[1] = 0x2AFFF008; // ADD @-1 @8
+  m.core[2] = 0xFFFFFFFE; // DAT -2
+  m.core[3] = 0x00000004; // DAT 4
+  m.core[4] = 0x00000001; // DAT 1
+
+  w.PC = 1;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+  TEST_ASSERT_EQUAL(0x2AFFF008, m.core[1]);
+  TEST_ASSERT_EQUAL(0x00000002, m.core[2]);
+  TEST_ASSERT_EQUAL(0x00000004, m.core[3]);
+  TEST_ASSERT_EQUAL(0x00000001, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 // TESTS FOR SUB
