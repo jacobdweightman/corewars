@@ -634,35 +634,149 @@ void test_add_indirect_indirect(void) {
 
 // TESTS FOR SUB
 void test_sub_immediate_indirect(void) {
-    TEST_IGNORE();
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    m.core[0] = 0x00000002; // DAT 1
+    m.core[1] = 0x32003001; // SUB #3 @1
+    m.core[2] = 0xFFFFFFFE; // DAT -2
+    m.core[3] = 0x00000004; // DAT 4
+    m.core[4] = 0x10101018; // DAT 269488152
+
+    w.PC = 1;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+    TEST_ASSERT_EQUAL(0x32003001, m.core[1]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFE, m.core[2]);
+    TEST_ASSERT_EQUAL(0x00000004, m.core[3]);
+    TEST_ASSERT_EQUAL(0x10101015, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_sub_immediate_relative(void) {
-    TEST_IGNORE();
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    m.core[0] = 0x00000002; // DAT 1
+    m.core[1] = 0x00000014; // DAT 20
+    m.core[2] = 0xFFFFFFFE; // DAT -2
+    m.core[3] = 0x31015003; // SUB #3 3
+    m.core[4] = 0x10101018; // DAT 269488152
+
+    w.PC = 3;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFF, m.core[1]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFE, m.core[2]);
+    TEST_ASSERT_EQUAL(0x31015003, m.core[3]);
+    TEST_ASSERT_EQUAL(0x10101018, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_sub_relative_relative(void) {
-    TEST_IGNORE();
+    mars m = create_mars(5, 5, 100);
+    warrior w;
+    insert_warrior(&m, &w);
+
+    m.core[0] = 0x00000002; // DAT 1
+    m.core[1] = 0x00000014; // DAT 20
+    m.core[2] = 0xFFFFFFFE; // DAT -2
+    m.core[3] = 0x10101018; // DAT 269488152
+    m.core[4] = 0x35FF8009; // SUB -8 9
+
+    w.PC = 4;
+    tick(&m);
+
+    TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+    TEST_ASSERT_EQUAL(0x00000014, m.core[1]);
+    TEST_ASSERT_EQUAL(0xFFFFFFFE, m.core[2]);
+    TEST_ASSERT_EQUAL(0x10101004, m.core[3]);
+    TEST_ASSERT_EQUAL(0x35FF8009, m.core[4]);
+
+    destroy_mars(&m);
 }
 
 void test_sub_indirect_relative(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  m.core[0] = 0x39006FFE; // SUB @6 -2
+  m.core[1] = 0x00000004; // DAT 4
+  m.core[2] = 0xFFFFFFFE; // DAT -2
+  m.core[3] = 0x10101018; // DAT 269488152
+  m.core[4] = 0xFFFFFFFC; // DAT -4
+
+  w.PC = 0;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x39006FFE, m.core[0]);
+  TEST_ASSERT_EQUAL(0x00000004, m.core[1]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFE, m.core[2]);
+  TEST_ASSERT_EQUAL(0x1010101C, m.core[3]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFC, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 void test_sub_relative_indirect(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  m.core[0] = 0x00000004; // DAT 4
+  m.core[1] = 0x36006FFE; // SUB 6 @-2
+  m.core[2] = 0x12345678; // DAT 0x12345678
+  m.core[3] = 0x10101018; // DAT 269488152
+  m.core[4] = 0xFFFFFFFC; // DAT -4
+
+  w.PC = 1;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x00000004, m.core[0]);
+  TEST_ASSERT_EQUAL(0x36006FFE, m.core[1]);
+  TEST_ASSERT_EQUAL(0x00000000, m.core[2]);
+  TEST_ASSERT_EQUAL(0x10101018, m.core[3]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFC, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 void test_sub_indirect_indirect(void) {
-    TEST_IGNORE();
+  mars m = create_mars(5, 5, 100);
+  warrior w;
+  insert_warrior(&m, &w);
+
+  m.core[0] = 0x00000002; // DAT 2
+  m.core[1] = 0x36006FFE; // SUB 6 @-2
+  m.core[2] = 0x3AFFE001; // SUB @-2 @1
+  m.core[3] = 0xFFFFFFFF; // DAT 269488152
+  m.core[4] = 0x00000001; // DAT 1
+
+  w.PC = 2;
+  tick(&m);
+
+  TEST_ASSERT_EQUAL(0x00000002, m.core[0]);
+  TEST_ASSERT_EQUAL(0x36006FFD, m.core[1]);
+  TEST_ASSERT_EQUAL(0x3AFFE001, m.core[2]);
+  TEST_ASSERT_EQUAL(0xFFFFFFFF, m.core[3]);
+  TEST_ASSERT_EQUAL(0x00000001, m.core[4]);
+
+  destroy_mars(&m);
 }
 
 // TESTS FOR JMP
-void test_sub_relative(void) {
+void test_jmp_relative(void) {
     TEST_IGNORE();
 }
 
-void test_sub_indirect(void) {
+void test_jmp_indirect(void) {
     TEST_IGNORE();
 }
 
@@ -770,8 +884,14 @@ int main() {
     RUN_TEST(test_add_indirect_relative);
     RUN_TEST(test_add_relative_indirect);
     RUN_TEST(test_add_indirect_indirect);
-    RUN_TEST(test_sub_relative);
-    RUN_TEST(test_sub_indirect);
+    RUN_TEST(test_sub_immediate_relative);
+    RUN_TEST(test_sub_immediate_indirect);
+    RUN_TEST(test_sub_relative_relative);
+    RUN_TEST(test_sub_indirect_relative);
+    RUN_TEST(test_sub_relative_indirect);
+    RUN_TEST(test_sub_indirect_indirect);
+    RUN_TEST(test_jmp_relative);
+    RUN_TEST(test_jmp_indirect);
     RUN_TEST(test_jmz_immediate_relative);
     RUN_TEST(test_jmz_immediate_indirect);
     RUN_TEST(test_jmz_relative_relative);
